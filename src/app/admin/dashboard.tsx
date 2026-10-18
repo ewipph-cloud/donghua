@@ -61,6 +61,22 @@ type ModalState =
   | { type: "episode"; record: EpisodeRecord | null }
   | null;
 
+const validationFieldLabels: Record<string, string> = {
+  title: "Judul",
+  slug: "Slug URL",
+  synopsis: "Sinopsis",
+  genre: "Genre",
+  status: "Status",
+  year: "Tahun rilis",
+  latest_episode: "Episode terbaru",
+  rating: "Rating",
+  poster_url: "URL poster",
+  banner_url: "URL banner",
+  stream_url: "URL stream",
+  featured: "Pilihan utama",
+  published: "Status publikasi",
+};
+
 async function readJson(response: Response): Promise<unknown> {
   const payload: unknown = await response.json();
   if (!response.ok) {
@@ -68,7 +84,19 @@ async function readJson(response: Response): Promise<unknown> {
       payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
         ? payload.error
         : `Permintaan gagal (${response.status}).`;
-    throw new Error(message);
+    const details =
+      payload && typeof payload === "object" && "details" in payload && payload.details &&
+      typeof payload.details === "object"
+        ? Object.entries(payload.details)
+            .flatMap(([field, messages]) =>
+              Array.isArray(messages)
+                ? messages
+                    .filter((item): item is string => typeof item === "string")
+                    .map((item) => `${validationFieldLabels[field] ?? field}: ${item}`)
+                : [],
+            )
+        : [];
+    throw new Error(details.length ? `${message} ${details.join(" ")}` : message);
   }
   return payload;
 }
@@ -388,7 +416,7 @@ export function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        <div className="episode-note"><AlertCircle size={14} /> Tautan stream disimpan sebagai metadata. Pemutar publik tetap menunggu integrasi sumber video.</div>
+        <div className="episode-note"><AlertCircle size={14} /> URL episode dipakai lebih dulu daripada URL stream utama. Gunakan file MP4/WebM/HLS langsung atau URL embed HTTPS dari provider yang mengizinkan iframe.</div>
       </section>
 
       {modal && (
@@ -411,7 +439,7 @@ export function AdminDashboard() {
                   <label className="form-full">Sinopsis<textarea rows={3} maxLength={1200} value={formContent.synopsis} onChange={(event) => setFormContent((form) => ({ ...form, synopsis: event.target.value }))} placeholder="Ringkasan cerita..." /></label>
                   <label className="form-full">URL poster<input type="url" value={formContent.poster_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, poster_url: event.target.value }))} placeholder="https://project.supabase.co/storage/v1/object/public/..." /></label>
                   <label className="form-full">URL banner<input type="url" value={formContent.banner_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, banner_url: event.target.value }))} placeholder="https://project.supabase.co/storage/v1/object/public/..." /></label>
-                  <label className="form-full">URL stream utama (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://..." /></label>
+                  <label className="form-full">URL stream utama (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                 </div>
                 <div className="form-switches">
                   <label><input type="checkbox" checked={formContent.featured} onChange={(event) => setFormContent((form) => ({ ...form, featured: event.target.checked }))} /><span><strong>Pilihan utama</strong><small>Tampilkan sebagai rekomendasi unggulan</small></span></label>
@@ -426,10 +454,10 @@ export function AdminDashboard() {
                   <label className="form-full">Judul donghua<select required value={formEpisode.content_id} onChange={(event) => setFormEpisode((form) => ({ ...form, content_id: event.target.value }))}>{contents.map((content) => <option key={content.id} value={content.id}>{content.title}</option>)}</select></label>
                   <label>Nomor episode<input type="number" min="0" max="9999" required value={formEpisode.episode_number} onChange={(event) => setFormEpisode((form) => ({ ...form, episode_number: Number(event.target.value) }))} /></label>
                   <label>Judul episode<input value={formEpisode.title} onChange={(event) => setFormEpisode((form) => ({ ...form, title: event.target.value }))} placeholder="Pertemuan baru" /></label>
-                  <label className="form-full">URL stream berizin<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://..." /></label>
+                  <label className="form-full">URL stream berizin<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                 </div>
                 <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan pada katalog publik</small></span></label></div>
-                <div className="episode-form-note"><AlertCircle size={14} /> Pemutar video belum membaca tautan ini. Integrasikan provider stream sebelum mengaktifkan tayangan.</div>
+                <div className="episode-form-note"><AlertCircle size={14} /> Didukung: MP4/WebM/OGG, HLS (.m3u8), serta URL embed HTTPS dari provider yang mengizinkan iframe.</div>
                 {formError && <div className="form-error" role="alert"><AlertCircle size={15} />{formError}</div>}
                 <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving || !contents.length}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{saving ? "Menyimpan..." : "Simpan episode"}</button></footer>
               </form>

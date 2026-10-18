@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { AdminShell } from "@/app/admin/admin-shell";
 import { getAdminSession } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -17,6 +18,8 @@ export default function ProtectedAdminLayout({
 }
 
 async function AdminAccessGuard({ children }: Readonly<{ children: React.ReactNode }>) {
+  await connection();
+
   if (!isSupabaseConfigured()) redirect("/admin/login?setup=required");
 
   const admin = await getAdminSession();

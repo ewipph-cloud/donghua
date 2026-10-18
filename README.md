@@ -44,6 +44,6 @@ Jangan pernah menaruh `service_role` key di browser, `.env.example`, atau source
 - CRUD episode, nomor episode, status publikasi, dan URL stream HTTPS.
 - Katalog publik membaca konten terbit dari Supabase setelah konfigurasi tersedia.
 
-## Status pemutar
+## Pemutar video
 
-Halaman `/watch/[slug]` dan daftar episode sudah tersedia. Pemutar sengaja belum memuat video: belum ada provider/CDN berizin yang dipilih. Tautan stream yang dimasukkan di dashboard hanya disimpan sebagai metadata hingga integrasi pemutar ditentukan.
+Halaman `/watch/[slug]` menggunakan URL stream episode terlebih dahulu, lalu URL stream utama konten sebagai fallback. Pemutar mendukung file MP4, WebM, OGG, stream HLS (`.m3u8`), URL embed provider yang mengizinkan iframe, serta URL video YouTube biasa. Semua URL harus HTTPS dan sumber video harus memiliki izin penggunaan.

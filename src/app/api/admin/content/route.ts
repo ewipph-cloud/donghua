@@ -57,7 +57,9 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return databaseErrorResponse(error, "Konten tidak dapat disimpan.");
+    return databaseErrorResponse(error, "Konten tidak dapat disimpan.", {
+      anime_content_slug_key: "Slug ini sudah digunakan. Pilih slug yang berbeda.",
+    });
   }
 
   return Response.json(data, { status: 201 });

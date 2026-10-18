@@ -43,7 +43,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     .maybeSingle();
 
   if (error) {
-    return databaseErrorResponse(error, "Konten tidak dapat diperbarui.");
+    return databaseErrorResponse(error, "Konten tidak dapat diperbarui.", {
+      anime_content_slug_key: "Slug ini sudah digunakan oleh konten lain. Pilih slug yang berbeda.",
+    });
   }
   if (!data) return Response.json({ error: "Konten tidak ditemukan." }, { status: 404 });
 

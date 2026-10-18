@@ -2,13 +2,19 @@ import { z } from "zod";
 
 const optionalUrl = z
   .string()
-  .trim()
-  .refine((value) => {
-    if (!value) return true;
-    const parsed = z.url().safeParse(value);
-    return parsed.success && new URL(parsed.data).protocol === "https:";
-  }, "Masukkan URL HTTPS yang valid.")
-  .transform((value) => value || null);
+  .nullable()
+  .transform((value) => value ?? "")
+  .pipe(
+    z
+      .string()
+      .trim()
+      .refine((value) => {
+        if (!value) return true;
+        const parsed = z.url().safeParse(value);
+        return parsed.success && new URL(parsed.data).protocol === "https:";
+      }, "Masukkan URL HTTPS yang valid.")
+      .transform((value) => value || null),
+  );
 
 const optionalImageUrl = optionalUrl.refine((value) => {
   if (!value) return true;
