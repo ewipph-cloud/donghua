@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Donghua ID
 
-## Getting Started
+Katalog donghua berbahasa Indonesia dengan halaman pemutar, login administrator, serta dashboard untuk mengelola judul dan episode.
 
-First, run the development server:
+## Menjalankan aplikasi
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka `http://localhost:3000`. Katalog contoh dan UI pemutar dapat dilihat tanpa koneksi backend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Menyiapkan Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Admin memakai Supabase Auth dan database. Tanpa konfigurasi ini, login dan dashboard tetap tertutup; akun contoh atau autentikasi palsu tidak disediakan.
 
-## Learn More
+1. Buat project Supabase dan salin URL serta publishable key dari **Project Settings → API**.
+2. Jalankan isi [`supabase/schema.sql`](./supabase/schema.sql) di Supabase **SQL Editor**.
+3. Buat/invite akun administrator melalui **Authentication → Users**.
+4. Salin UUID akun tersebut, lalu daftarkan sebagai admin di SQL Editor:
 
-To learn more about Next.js, take a look at the following resources:
+   ```sql
+   insert into public.admin_users (user_id)
+   values ('UUID-AKUN-ADMIN');
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Salin `.env.example` menjadi `.env.local`, lalu isi:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   ```
 
-## Deploy on Vercel
+6. Mulai ulang server dev, lalu buka `/admin/login`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Jangan pernah menaruh `service_role` key di browser, `.env.example`, atau source control. Akses tabel dibatasi oleh row-level security; endpoint admin juga memeriksa sesi dan membership admin di server.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Fitur admin
+
+- Login dengan email/password Supabase Auth.
+- Dashboard ringkasan, jumlah konten/episode, dan status publikasi.
+- CRUD judul, pencarian/filter, metadata, gambar dari Unsplash atau Supabase Storage, sinopsis, rating, unggulan, dan publikasi.
+- CRUD episode, nomor episode, status publikasi, dan URL stream HTTPS.
+- Katalog publik membaca konten terbit dari Supabase setelah konfigurasi tersedia.
+
+## Status pemutar
+
+Halaman `/watch/[slug]` dan daftar episode sudah tersedia. Pemutar sengaja belum memuat video: belum ada provider/CDN berizin yang dipilih. Tautan stream yang dimasukkan di dashboard hanya disimpan sebagai metadata hingga integrasi pemutar ditentukan.
