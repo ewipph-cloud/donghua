@@ -32,6 +32,37 @@ $$;
 revoke all on function private.is_admin() from public;
 grant execute on function private.is_admin() to anon, authenticated;
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'content-images',
+  'content-images',
+  true,
+  6291456,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/avif']::text[]
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Admins can upload content images" on storage.objects;
+create policy "Admins can upload content images"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'content-images'
+    and (select private.is_admin())
+  );
+
+drop policy if exists "Admins can delete content images" on storage.objects;
+create policy "Admins can delete content images"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'content-images'
+    and (select private.is_admin())
+  );
+
 create or replace function private.set_updated_at()
 returns trigger
 language plpgsql

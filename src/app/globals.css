@@ -382,7 +382,8 @@ button {
   object-fit: cover;
   object-position: center 45%;
   opacity: 0.83;
-  transform: scale(1.015);
+  filter: blur(7px);
+  transform: scale(1.06);
 }
 
 .hero-vignette {
@@ -2831,6 +2832,81 @@ button {
 .admin-form input::placeholder,
 .admin-form textarea::placeholder {
   color: #626b76;
+}
+
+.image-upload-field {
+  display: grid;
+  gap: 6px;
+}
+
+.image-upload-field > .image-upload-preview {
+  position: relative;
+  width: min(100%, 240px);
+  height: 120px;
+  overflow: hidden;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 7px;
+  background: #111318;
+}
+
+.image-upload-title {
+  color: #9ea6b1;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.image-upload-preview > img {
+  object-fit: contain;
+}
+
+.image-upload-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.admin-form label.image-upload-button,
+.image-upload-clear {
+  display: inline-flex;
+  min-height: 31px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 6px;
+  background: #171a20;
+  color: #e4e7eb;
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.image-upload-button input[type="file"] {
+  display: none;
+}
+
+.image-upload-clear {
+  background: transparent;
+  color: #b8bec7;
+}
+
+.image-upload-button:has(input:disabled),
+.image-upload-clear:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.image-upload-hint,
+.image-upload-url-label {
+  color: #7f8792;
+  font-size: 8px;
+  font-weight: 400;
+}
+
+.image-upload-error {
+  color: #ff9c9c;
+  font-size: 9px;
+  font-weight: 500;
 }
 
 .admin-form textarea {

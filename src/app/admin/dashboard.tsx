@@ -31,6 +31,7 @@ import {
   type EpisodeInput,
   type EpisodeRecord,
 } from "@/lib/admin/content-schema";
+import { ImageUploadField } from "@/app/admin/image-upload-field";
 
 const emptyContent: ContentInput = {
   title: "",
@@ -139,6 +140,7 @@ export function AdminDashboard() {
   const [formContent, setFormContent] = useState<ContentInput>(emptyContent);
   const [formEpisode, setFormEpisode] = useState<EpisodeInput>(emptyEpisode);
   const [saving, setSaving] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(0);
   const [formError, setFormError] = useState("");
 
   const loadData = useCallback(async () => {
@@ -232,7 +234,12 @@ export function AdminDashboard() {
 
   async function saveContent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (modal?.type !== "content") return;
+    if (modal?.type !== "content" || uploadingImages > 0) return;
+    const previousImages = modal.record
+      ? [modal.record.poster_url, modal.record.banner_url].filter(
+          (url): url is string => Boolean(url) && url !== formContent.poster_url && url !== formContent.banner_url,
+        )
+      : [];
     setSaving(true);
     setFormError("");
     try {
@@ -244,6 +251,17 @@ export function AdminDashboard() {
       contentRecordSchema.parse(payload);
       setModal(null);
       setNotice(modal.record ? "Perubahan konten berhasil disimpan." : "Konten baru berhasil dibuat.");
+      if (previousImages.length) {
+        try {
+          await sendJson("/api/admin/assets", "DELETE", { urls: previousImages });
+        } catch (error) {
+          setNotice(
+            `Konten berhasil disimpan, tetapi gambar lama gagal dihapus: ${
+              error instanceof Error ? error.message : "Kesalahan tidak diketahui."
+            }`,
+          );
+        }
+      }
       await loadData();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Konten gagal disimpan.");
@@ -278,12 +296,33 @@ export function AdminDashboard() {
     }
   }
 
-  async function deleteRecord(type: "content" | "episode", id: string, title: string) {
+  async function deleteRecord(
+    type: "content" | "episode",
+    id: string,
+    title: string,
+    imageUrls: string[] = [],
+  ) {
     if (!window.confirm(`Hapus "${title}"? Tindakan ini tidak dapat dibatalkan.`)) return;
     setNotice("");
     try {
       await sendJson(`/api/admin/${type === "content" ? "content" : "episodes"}/${id}`, "DELETE");
-      setNotice(`${type === "content" ? "Konten" : "Episode"} berhasil dihapus.`);
+      setNotice(
+        `${type === "content" ? "Konten" : "Episode"} berhasil dihapus.${
+          imageUrls.length ? " Membersihkan file gambar..." : ""
+        }`,
+      );
+      if (imageUrls.length) {
+        try {
+          await sendJson("/api/admin/assets", "DELETE", { urls: imageUrls });
+          setNotice("Konten dan gambar yang tidak lagi digunakan berhasil dibersihkan.");
+        } catch (error) {
+          setNotice(
+            `Konten berhasil dihapus, tetapi gambar lama gagal dihapus: ${
+              error instanceof Error ? error.message : "Kesalahan tidak diketahui."
+            }`,
+          );
+        }
+      }
       await loadData();
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Data tidak dapat dihapus.");
@@ -388,7 +427,7 @@ export function AdminDashboard() {
                   <td><div className="table-actions">
                     <button type="button" title={content.published ? "Jadikan draft" : "Terbitkan"} aria-label={content.published ? `Jadikan ${content.title} draft` : `Terbitkan ${content.title}`} onClick={() => void togglePublished(content)}><Send size={15} /></button>
                     <button type="button" title="Edit" aria-label={`Edit ${content.title}`} onClick={() => openContentModal(content)}><Pencil size={15} /></button>
-                    <button className="action-delete" type="button" title="Hapus" aria-label={`Hapus ${content.title}`} onClick={() => void deleteRecord("content", content.id, content.title)}><Trash2 size={15} /></button>
+                    <button className="action-delete" type="button" title="Hapus" aria-label={`Hapus ${content.title}`} onClick={() => void deleteRecord("content", content.id, content.title, [content.poster_url, content.banner_url].filter((url): url is string => Boolean(url)))}><Trash2 size={15} /></button>
                   </div></td>
                 </tr>
               )) : (
@@ -453,8 +492,22 @@ export function AdminDashboard() {
                   <label>Episode terbaru<input value={formContent.latest_episode} onChange={(event) => setFormContent((form) => ({ ...form, latest_episode: event.target.value }))} placeholder="EP 24" /></label>
                   <label>Rating (0–10)<input type="number" min="0" max="10" step="0.1" value={formContent.rating} onChange={(event) => setFormContent((form) => ({ ...form, rating: Number(event.target.value) }))} /></label>
                   <label className="form-full">Sinopsis<textarea rows={3} maxLength={1200} value={formContent.synopsis} onChange={(event) => setFormContent((form) => ({ ...form, synopsis: event.target.value }))} placeholder="Ringkasan cerita..." /></label>
-                  <label className="form-full">URL poster<input type="url" value={formContent.poster_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, poster_url: event.target.value }))} placeholder="https://project.supabase.co/storage/v1/object/public/..." /></label>
-                  <label className="form-full">URL banner<input type="url" value={formContent.banner_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, banner_url: event.target.value }))} placeholder="https://project.supabase.co/storage/v1/object/public/..." /></label>
+                  <ImageUploadField
+                    label="Poster"
+                    value={formContent.poster_url ?? ""}
+                    onChange={(poster_url) => setFormContent((form) => ({ ...form, poster_url }))}
+                    onUploadingChange={(uploading) =>
+                      setUploadingImages((count) => Math.max(0, count + (uploading ? 1 : -1)))
+                    }
+                  />
+                  <ImageUploadField
+                    label="Banner"
+                    value={formContent.banner_url ?? ""}
+                    onChange={(banner_url) => setFormContent((form) => ({ ...form, banner_url }))}
+                    onUploadingChange={(uploading) =>
+                      setUploadingImages((count) => Math.max(0, count + (uploading ? 1 : -1)))
+                    }
+                  />
                   <label className="form-full">URL stream utama (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                 </div>
                 <div className="form-switches">
@@ -462,7 +515,7 @@ export function AdminDashboard() {
                   <label><input type="checkbox" checked={formContent.published} onChange={(event) => setFormContent((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan konten</strong><small>Konten bisa dilihat pengunjung</small></span></label>
                 </div>
                 {formError && <div className="form-error" role="alert"><AlertCircle size={15} />{formError}</div>}
-                <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{saving ? "Menyimpan..." : "Simpan konten"}</button></footer>
+                <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving || uploadingImages > 0}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{uploadingImages > 0 ? "Menunggu unggahan..." : saving ? "Menyimpan..." : "Simpan konten"}</button></footer>
               </form>
             ) : (
               <form className="admin-form" onSubmit={saveEpisode}>

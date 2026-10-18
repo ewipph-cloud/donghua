@@ -40,9 +40,11 @@ Jangan pernah menaruh `service_role` key di browser, `.env.example`, atau source
 
 - Login dengan email/password Supabase Auth.
 - Dashboard ringkasan, jumlah konten/episode, dan status publikasi.
-- CRUD judul, pencarian/filter, metadata, gambar dari Unsplash atau Supabase Storage, sinopsis, rating, unggulan, dan publikasi.
+- CRUD judul, pencarian/filter, metadata, upload poster/banner ke bucket Supabase Storage, sinopsis, rating, unggulan, dan publikasi.
 - CRUD episode, nomor episode, status publikasi, dan URL stream HTTPS.
 - Katalog publik membaca konten terbit dari Supabase setelah konfigurasi tersedia.
+
+Upload poster/banner menerima JPG, PNG, WebP, dan AVIF hingga 6 MB. Setelah memperbarui project, jalankan ulang [`supabase/schema.sql`](./supabase/schema.sql) di Supabase SQL Editor untuk membuat bucket publik `content-images` dan kebijakan upload/hapus khusus admin.
 
 ## Pemutar video
 
