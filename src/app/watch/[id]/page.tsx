@@ -95,15 +95,26 @@ async function WatchPageContent({ params }: WatchPageProps) {
 
   if (!selected) notFound();
 
-  const fallbackEpisode = Number(selected.episode.match(/\d+/)?.[0] ?? 1);
-  const episodes = availableEpisodes.length
-    ? availableEpisodes
-    : isSupabaseConfigured() && !databaseWarning
-      ? []
-      : Array.from({ length: Math.min(12, fallbackEpisode) }, (_, index) => ({
-          episodeNumber: Math.max(1, fallbackEpisode - Math.min(12, fallbackEpisode) + index + 1),
-          streamUrl: null,
-        }));
+  const metadataEpisode = Number(selected.episode.match(/\d+/)?.[0] ?? 0);
+  const fallbackEpisode = metadataEpisode || 1;
+  let episodes: WatchEpisode[];
+
+  if (availableEpisodes.length) {
+    episodes = [...availableEpisodes];
+    if (metadataEpisode && !episodes.some((episode) => episode.episodeNumber === metadataEpisode)) {
+      episodes.push({ episodeNumber: metadataEpisode, streamUrl: contentStreamUrl });
+    }
+    episodes.sort((left, right) => left.episodeNumber - right.episodeNumber);
+  } else if (isSupabaseConfigured() && !databaseWarning) {
+    episodes = metadataEpisode
+      ? [{ episodeNumber: metadataEpisode, streamUrl: contentStreamUrl }]
+      : [];
+  } else {
+    episodes = Array.from({ length: Math.min(12, fallbackEpisode) }, (_, index) => ({
+      episodeNumber: Math.max(1, fallbackEpisode - Math.min(12, fallbackEpisode) + index + 1),
+      streamUrl: null,
+    }));
+  }
 
   return (
     <WatchPlayer

@@ -123,6 +123,10 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function latestEpisodeNumber(value: string) {
+  return Number(value.match(/\d+/)?.[0] ?? 1);
+}
+
 export function AdminDashboard() {
   const [contents, setContents] = useState<ContentRecord[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeRecord[]>([]);
@@ -201,6 +205,17 @@ export function AdminDashboard() {
 
   function openEpisodeModal(record: EpisodeRecord | null) {
     setFormError("");
+    const contentId = contents[0]?.id ?? "";
+    const latestEpisode = latestEpisodeNumber(
+      contents.find((content) => content.id === contentId)?.latest_episode ?? "",
+    );
+    const nextEpisode = episodes.reduce(
+      (highest, episode) =>
+        episode.content_id === contentId
+          ? Math.max(highest, episode.episode_number + 1)
+          : highest,
+      1,
+    );
     setFormEpisode(record ? {
       content_id: record.content_id,
       episode_number: record.episode_number,
@@ -209,7 +224,8 @@ export function AdminDashboard() {
       published: record.published,
     } : {
       ...emptyEpisode,
-      content_id: contents[0]?.id ?? "",
+      content_id: contentId,
+      episode_number: Math.max(latestEpisode, nextEpisode),
     });
     setModal({ type: "episode", record });
   }
@@ -451,7 +467,24 @@ export function AdminDashboard() {
             ) : (
               <form className="admin-form" onSubmit={saveEpisode}>
                 <div className="form-grid">
-                  <label className="form-full">Judul donghua<select required value={formEpisode.content_id} onChange={(event) => setFormEpisode((form) => ({ ...form, content_id: event.target.value }))}>{contents.map((content) => <option key={content.id} value={content.id}>{content.title}</option>)}</select></label>
+                  <label className="form-full">Judul donghua<select required value={formEpisode.content_id} onChange={(event) => setFormEpisode((form) => {
+                    const contentId = event.target.value;
+                    const latestEpisode = latestEpisodeNumber(
+                      contents.find((content) => content.id === contentId)?.latest_episode ?? "",
+                    );
+                    const nextEpisode = episodes.reduce(
+                      (highest, episode) =>
+                        episode.content_id === contentId
+                          ? Math.max(highest, episode.episode_number + 1)
+                          : highest,
+                      1,
+                    );
+                    return {
+                      ...form,
+                      content_id: contentId,
+                      episode_number: Math.max(latestEpisode, nextEpisode),
+                    };
+                  })}>{contents.map((content) => <option key={content.id} value={content.id}>{content.title}</option>)}</select></label>
                   <label>Nomor episode<input type="number" min="0" max="9999" required value={formEpisode.episode_number} onChange={(event) => setFormEpisode((form) => ({ ...form, episode_number: Number(event.target.value) }))} /></label>
                   <label>Judul episode<input value={formEpisode.title} onChange={(event) => setFormEpisode((form) => ({ ...form, title: event.target.value }))} placeholder="Pertemuan baru" /></label>
                   <label className="form-full">URL stream berizin<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>

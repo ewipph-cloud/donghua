@@ -149,7 +149,11 @@ export function WatchPlayer({
   streamUrl: string | null;
   databaseWarning: string;
 }>) {
-  const [selectedEpisode, setSelectedEpisode] = useState(episodes.at(-1)?.episodeNumber ?? 1);
+  const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
+  const latestAvailableEpisode = episodes.at(-1)?.episodeNumber ?? 1;
+  const [selectedEpisode, setSelectedEpisode] = useState(
+    Math.max(latestMetadataEpisode, latestAvailableEpisode),
+  );
   const selectedStreamUrl =
     episodes.find((episode) => episode.episodeNumber === selectedEpisode)?.streamUrl || streamUrl;
   const poster = imageUrl(title.bannerImage ?? title.image, 1400);
