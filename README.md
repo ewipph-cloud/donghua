@@ -11,6 +11,10 @@ npm run dev
 
 Buka `http://localhost:3000`. Katalog contoh dan UI pemutar dapat dilihat tanpa koneksi backend.
 
+## PWA
+
+Aplikasi menyediakan manifest, ikon instalasi, service worker, dan halaman offline. Banner instalasi akan muncul pada browser yang belum memasang aplikasi; tombol tutup menyembunyikannya. Di browser yang tidak mendukung prompt instalasi langsung, banner menampilkan petunjuk untuk menambahkan situs ke layar utama. Service worker dan instalasi PWA memerlukan HTTPS, kecuali saat berjalan di `localhost`.
+
 ## Menyiapkan Supabase
 
 Admin memakai Supabase Auth dan database. Tanpa konfigurasi ini, login dan dashboard tetap tertutup; akun contoh atau autentikasi palsu tidak disediakan.

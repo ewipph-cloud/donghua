@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
+import InstallPrompt from "./install-prompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,14 @@ export const metadata: Metadata = {
   title: "Donghua ID — Jelajahi Dunia Lain",
   description:
     "Temukan donghua favoritmu, ikuti episode terbaru, dan simpan cerita pilihan dalam satu katalog.",
+  appleWebApp: {
+    capable: true,
+    title: "Donghua ID",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -31,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body>
         {children}
+        <InstallPrompt />
         <Analytics />
       </body>
     </html>
