@@ -64,16 +64,6 @@ function getPlaybackSource(streamUrl: string) {
     }
   }
 
-  if (hostname === "dmcdn.net" || hostname.endsWith(".dmcdn.net")) {
-    const videoId = url.pathname.match(/\/video\/(?:fmp4\/)?([a-z0-9]+)\//i)?.[1];
-    if (videoId) {
-      return {
-        type: "embed" as const,
-        url: `https://www.dailymotion.com/embed/video/${encodeURIComponent(videoId)}`,
-      };
-    }
-  }
-
   if (url.pathname.toLowerCase().endsWith(".m3u8")) {
     return { type: "hls" as const, url: streamUrl };
   }
