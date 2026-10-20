@@ -91,6 +91,7 @@ create table if not exists public.anime_content (
   stream_url text,
   stream_url_okru text,
   stream_url_dailymotion text,
+  stream_url_dailymotion_audio text,
   featured boolean not null default false,
   published boolean not null default false,
   views bigint not null default 0 check (views >= 0),
@@ -100,7 +101,8 @@ create table if not exists public.anime_content (
 
 alter table public.anime_content
   add column if not exists stream_url_okru text,
-  add column if not exists stream_url_dailymotion text;
+  add column if not exists stream_url_dailymotion text,
+  add column if not exists stream_url_dailymotion_audio text;
 
 create index if not exists anime_content_published_updated_idx
   on public.anime_content (published, updated_at desc);
@@ -115,6 +117,7 @@ create table if not exists public.anime_episodes (
   stream_url text,
   stream_url_okru text,
   stream_url_dailymotion text,
+  stream_url_dailymotion_audio text,
   published boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -123,7 +126,8 @@ create table if not exists public.anime_episodes (
 
 alter table public.anime_episodes
   add column if not exists stream_url_okru text,
-  add column if not exists stream_url_dailymotion text;
+  add column if not exists stream_url_dailymotion text,
+  add column if not exists stream_url_dailymotion_audio text;
 
 create index if not exists anime_episodes_content_number_idx
   on public.anime_episodes (content_id, episode_number desc);

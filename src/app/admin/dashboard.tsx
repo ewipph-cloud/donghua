@@ -80,6 +80,7 @@ const validationFieldLabels: Record<string, string> = {
   stream_url: "URL stream",
   stream_url_okru: "URL server OK.Ru",
   stream_url_dailymotion: "URL server Dailymotion",
+  stream_url_dailymotion_audio: "URL audio Dailymotion",
   featured: "Pilihan utama",
   published: "Status publikasi",
 };
@@ -207,6 +208,7 @@ export function AdminDashboard() {
       stream_url: record.stream_url ?? "",
       stream_url_okru: record.stream_url_okru ?? "",
       stream_url_dailymotion: record.stream_url_dailymotion ?? "",
+      stream_url_dailymotion_audio: record.stream_url_dailymotion_audio ?? "",
       featured: record.featured,
       published: record.published,
     } : { ...emptyContent });
@@ -233,6 +235,7 @@ export function AdminDashboard() {
       stream_url: record.stream_url ?? "",
       stream_url_okru: record.stream_url_okru ?? "",
       stream_url_dailymotion: record.stream_url_dailymotion ?? "",
+      stream_url_dailymotion_audio: record.stream_url_dailymotion_audio ?? "",
       published: record.published,
     } : {
       ...emptyEpisode,
@@ -356,6 +359,7 @@ export function AdminDashboard() {
         stream_url: content.stream_url ?? "",
         stream_url_okru: content.stream_url_okru ?? "",
         stream_url_dailymotion: content.stream_url_dailymotion ?? "",
+        stream_url_dailymotion_audio: content.stream_url_dailymotion_audio ?? "",
         featured: content.featured,
         published: !content.published,
       });
@@ -522,7 +526,8 @@ export function AdminDashboard() {
                   />
                   <label className="form-full">URL server lain (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                   <label className="form-full">URL server OK.Ru<input type="url" value={formContent.stream_url_okru ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="https://ok.ru/video/... atau URL embed OK.Ru" /></label>
-                  <label className="form-full">URL server Dailymotion<input type="url" value={formContent.stream_url_dailymotion ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://www.dailymotion.com/video/... (disarankan)" /></label>
+                  <label className="form-full">URL video Dailymotion<input type="url" value={formContent.stream_url_dailymotion ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../h264_hq/.../manifest.m3u8" /></label>
+                  <label className="form-full">URL audio Dailymotion (opsional)<input type="url" value={formContent.stream_url_dailymotion_audio ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion_audio: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../aac_q2_0/.../manifest.m3u8" /></label>
                 </div>
                 <div className="form-switches">
                   <label><input type="checkbox" checked={formContent.featured} onChange={(event) => setFormContent((form) => ({ ...form, featured: event.target.checked }))} /><span><strong>Pilihan utama</strong><small>Tampilkan sebagai rekomendasi unggulan</small></span></label>
@@ -556,10 +561,11 @@ export function AdminDashboard() {
                   <label>Judul episode<input value={formEpisode.title} onChange={(event) => setFormEpisode((form) => ({ ...form, title: event.target.value }))} placeholder="Pertemuan baru" /></label>
                   <label className="form-full">URL server lain (opsional)<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                   <label className="form-full">URL server OK.Ru<input type="url" value={formEpisode.stream_url_okru ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="https://ok.ru/video/... atau URL embed OK.Ru" /></label>
-                  <label className="form-full">URL server Dailymotion<input type="url" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://www.dailymotion.com/video/... (disarankan)" /></label>
+                  <label className="form-full">URL video Dailymotion<input type="url" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../h264_hq/.../manifest.m3u8" /></label>
+                  <label className="form-full">URL audio Dailymotion (opsional)<input type="url" value={formEpisode.stream_url_dailymotion_audio ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion_audio: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../aac_q2_0/.../manifest.m3u8" /></label>
                 </div>
                 <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan pada katalog publik</small></span></label></div>
-                <div className="episode-form-note"><AlertCircle size={14} /> Tambahkan URL pada satu atau beberapa server. Manifest CDN Dailymotion (.m3u8) dimuat melalui proxy situs; tautan halaman Dailymotion memakai player embed resminya. OK.Ru juga memakai player embed.</div>
+                <div className="episode-form-note"><AlertCircle size={14} /> Jika manifest Dailymotion memisahkan track, isi URL video h264_hq dan URL audio aac_q2_0. Keduanya digabung oleh player situs melalui proxy HLS.</div>
                 {formError && <div className="form-error" role="alert"><AlertCircle size={15} />{formError}</div>}
                 <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving || !contents.length}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{saving ? "Menyimpan..." : "Simpan episode"}</button></footer>
               </form>

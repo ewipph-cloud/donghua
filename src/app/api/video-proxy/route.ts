@@ -85,6 +85,19 @@ function proxyUrl(uri: string, baseUrl: URL) {
   return `/api/video-proxy?url=${encodeURIComponent(targetUrl.href)}`;
 }
 
+function createCombinedPlaylist(videoUrl: URL, audioUrl: URL) {
+  const videoPlaylistUrl = proxyUrl(videoUrl.href, videoUrl);
+  const audioPlaylistUrl = proxyUrl(audioUrl.href, audioUrl);
+  return [
+    "#EXTM3U",
+    "#EXT-X-VERSION:6",
+    `#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="dailymotion-audio",NAME="Audio",DEFAULT=YES,AUTOSELECT=YES,URI="${audioPlaylistUrl}"`,
+    '#EXT-X-STREAM-INF:BANDWIDTH=5000000,AUDIO="dailymotion-audio"',
+    videoPlaylistUrl,
+    "",
+  ].join("\n");
+}
+
 function rewritePlaylist(playlist: string, baseUrl: URL) {
   return playlist
     .replace(/URI="([^"]+)"/g, (_match, uri: string) => `URI="${proxyUrl(uri, baseUrl)}"`)
@@ -99,7 +112,9 @@ function rewritePlaylist(playlist: string, baseUrl: URL) {
 }
 
 export async function GET(request: Request) {
-  const source = new URL(request.url).searchParams.get("url");
+  const requestUrl = new URL(request.url);
+  const source = requestUrl.searchParams.get("url");
+  const audioSource = requestUrl.searchParams.get("audio");
   if (!source || source.length > 8192) {
     return Response.json({ error: "URL stream tidak valid." }, { status: 400 });
   }
@@ -115,7 +130,36 @@ export async function GET(request: Request) {
     return Response.json({ error: "Host stream tidak diizinkan." }, { status: 403 });
   }
 
+  let audioUrl: URL | null = null;
+  if (audioSource) {
+    if (audioSource.length > 8192) {
+      return Response.json({ error: "URL audio tidak valid." }, { status: 400 });
+    }
+    try {
+      audioUrl = new URL(audioSource);
+    } catch {
+      return Response.json({ error: "URL audio tidak valid." }, { status: 400 });
+    }
+    if (!isDailymotionUrl(audioUrl)) {
+      return Response.json({ error: "Host audio tidak diizinkan." }, { status: 403 });
+    }
+    if (!targetUrl.pathname.toLowerCase().endsWith(".m3u8") || !audioUrl.pathname.toLowerCase().endsWith(".m3u8")) {
+      return Response.json({ error: "URL video dan audio harus berupa manifest HLS." }, { status: 400 });
+    }
+  }
+
   try {
+    if (audioUrl) {
+      const playlist = createCombinedPlaylist(targetUrl, audioUrl);
+      return new Response(playlist, {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "application/vnd.apple.mpegurl; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
     const { response, finalUrl } = await fetchDailymotion(targetUrl, request);
     const responseHeaders = new Headers({
       "Cache-Control": "no-store",

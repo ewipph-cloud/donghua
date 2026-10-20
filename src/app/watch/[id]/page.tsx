@@ -15,22 +15,35 @@ type WatchEpisode = {
   streamUrl: string | null;
   streamUrlOkru: string | null;
   streamUrlDailymotion: string | null;
+  streamUrlDailymotionAudio: string | null;
 };
 
 type WatchServer = {
   id: "other" | "okru" | "dailymotion";
   name: string;
   url: string;
+  audioUrl?: string;
 };
 
-function getServers(streamUrl: string | null, streamUrlOkru: string | null, streamUrlDailymotion: string | null) {
-  return [
+function getServers(
+  streamUrl: string | null,
+  streamUrlOkru: string | null,
+  streamUrlDailymotion: string | null,
+  streamUrlDailymotionAudio: string | null,
+) {
+  const servers: (WatchServer | null)[] = [
     streamUrl ? { id: "other" as const, name: "Server lain", url: streamUrl } : null,
     streamUrlOkru ? { id: "okru" as const, name: "OK.Ru", url: streamUrlOkru } : null,
     streamUrlDailymotion
-      ? { id: "dailymotion" as const, name: "Dailymotion", url: streamUrlDailymotion }
+      ? {
+          id: "dailymotion" as const,
+          name: "Dailymotion",
+          url: streamUrlDailymotion,
+          audioUrl: streamUrlDailymotionAudio ?? undefined,
+        }
       : null,
-  ].filter((server): server is WatchServer => server !== null);
+  ];
+  return servers.filter((server): server is WatchServer => server !== null);
 }
 
 export default function WatchPage({ params }: WatchPageProps) {
@@ -54,7 +67,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("anime_content")
-      .select("id,slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,stream_url,stream_url_okru,stream_url_dailymotion,synopsis")
+      .select("id,slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,stream_url,stream_url_okru,stream_url_dailymotion,stream_url_dailymotion_audio,synopsis")
       .eq("slug", id)
       .eq("published", true)
       .maybeSingle();
@@ -71,7 +84,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
     if (data) {
       const { data: episodeRows, error: episodeError } = await supabase
         .from("anime_episodes")
-        .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion")
+        .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion,stream_url_dailymotion_audio")
         .eq("content_id", data.id)
         .eq("published", true)
         .order("episode_number", { ascending: false })
@@ -99,13 +112,19 @@ async function WatchPageContent({ params }: WatchPageProps) {
         color: "#373f9c",
         summary: data.synopsis,
       } satisfies Series;
-      contentServers = getServers(data.stream_url, data.stream_url_okru, data.stream_url_dailymotion);
+      contentServers = getServers(
+        data.stream_url,
+        data.stream_url_okru,
+        data.stream_url_dailymotion,
+        data.stream_url_dailymotion_audio,
+      );
       availableEpisodes = (episodeRows ?? [])
         .map((episode) => ({
           episodeNumber: episode.episode_number,
           streamUrl: episode.stream_url,
           streamUrlOkru: episode.stream_url_okru,
           streamUrlDailymotion: episode.stream_url_dailymotion,
+          streamUrlDailymotionAudio: episode.stream_url_dailymotion_audio,
         }))
         .reverse();
     } else if (!databaseWarning) {
@@ -122,12 +141,24 @@ async function WatchPageContent({ params }: WatchPageProps) {
   if (availableEpisodes.length) {
     episodes = [...availableEpisodes];
     if (metadataEpisode && !episodes.some((episode) => episode.episodeNumber === metadataEpisode)) {
-      episodes.push({ episodeNumber: metadataEpisode, streamUrl: null, streamUrlOkru: null, streamUrlDailymotion: null });
+      episodes.push({
+        episodeNumber: metadataEpisode,
+        streamUrl: null,
+        streamUrlOkru: null,
+        streamUrlDailymotion: null,
+        streamUrlDailymotionAudio: null,
+      });
     }
     episodes.sort((left, right) => left.episodeNumber - right.episodeNumber);
   } else if (isSupabaseConfigured() && !databaseWarning) {
     episodes = metadataEpisode
-      ? [{ episodeNumber: metadataEpisode, streamUrl: null, streamUrlOkru: null, streamUrlDailymotion: null }]
+      ? [{
+          episodeNumber: metadataEpisode,
+          streamUrl: null,
+          streamUrlOkru: null,
+          streamUrlDailymotion: null,
+          streamUrlDailymotionAudio: null,
+        }]
       : [];
   } else {
     episodes = Array.from({ length: Math.min(12, fallbackEpisode) }, (_, index) => ({
@@ -135,6 +166,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
       streamUrl: null,
       streamUrlOkru: null,
       streamUrlDailymotion: null,
+      streamUrlDailymotionAudio: null,
     }));
   }
 

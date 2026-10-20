@@ -19,13 +19,38 @@ type WatchEpisode = {
   streamUrl: string | null;
   streamUrlOkru: string | null;
   streamUrlDailymotion: string | null;
+  streamUrlDailymotionAudio: string | null;
 };
 
 type WatchServer = {
   id: "other" | "okru" | "dailymotion";
   name: string;
   url: string;
+  audioUrl?: string;
 };
+
+function getEpisodeServers(episode: WatchEpisode | undefined): WatchServer[] {
+  if (!episode) return [];
+
+  const servers: (WatchServer | null)[] = [
+    episode.streamUrl
+      ? { id: "other", name: "Server lain", url: episode.streamUrl }
+      : null,
+    episode.streamUrlOkru
+      ? { id: "okru", name: "OK.Ru", url: episode.streamUrlOkru }
+      : null,
+    episode.streamUrlDailymotion
+      ? {
+          id: "dailymotion",
+          name: "Dailymotion",
+          url: episode.streamUrlDailymotion,
+          audioUrl: episode.streamUrlDailymotionAudio ?? undefined,
+        }
+      : null,
+  ];
+
+  return servers.filter((server): server is WatchServer => server !== null);
+}
 
 function getPlaybackSource(streamUrl: string) {
   const url = new URL(streamUrl);
@@ -81,9 +106,10 @@ function getPlaybackSource(streamUrl: string) {
 
 function VideoPlayback({
   streamUrl,
+  audioUrl,
   poster,
   title,
-}: Readonly<{ streamUrl: string; poster: string; title: string }>) {
+}: Readonly<{ streamUrl: string; audioUrl?: string; poster: string; title: string }>) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackError, setPlaybackError] = useState(false);
   const source = getPlaybackSource(streamUrl);
@@ -91,9 +117,13 @@ function VideoPlayback({
     const hostname = new URL(streamUrl).hostname.toLowerCase();
     return hostname === "dmcdn.net" || hostname.endsWith(".dmcdn.net");
   })();
-  const playbackUrl = isDailymotionCdn
-    ? `/api/video-proxy?url=${encodeURIComponent(streamUrl)}`
-    : streamUrl;
+  const playbackUrl = (() => {
+    if (!isDailymotionCdn) return streamUrl;
+    const proxyUrl = new URL("/api/video-proxy", window.location.origin);
+    proxyUrl.searchParams.set("url", streamUrl);
+    if (audioUrl) proxyUrl.searchParams.set("audio", audioUrl);
+    return `${proxyUrl.pathname}${proxyUrl.search}`;
+  })();
 
   useEffect(() => {
     if (source.type !== "hls") return;
@@ -213,17 +243,7 @@ export function WatchPlayer({
     Math.max(latestMetadataEpisode, latestAvailableEpisode),
   );
   const episode = episodes.find((item) => item.episodeNumber === selectedEpisode);
-  const episodeServers = episode
-    ? [
-        episode.streamUrl ? { id: "other" as const, name: "Server lain", url: episode.streamUrl } : null,
-        episode.streamUrlOkru
-          ? { id: "okru" as const, name: "OK.Ru", url: episode.streamUrlOkru }
-          : null,
-        episode.streamUrlDailymotion
-          ? { id: "dailymotion" as const, name: "Dailymotion", url: episode.streamUrlDailymotion }
-          : null,
-      ].filter((server): server is WatchServer => server !== null)
-    : [];
+  const episodeServers = getEpisodeServers(episode);
   const availableServers = episodeServers.length ? episodeServers : servers;
   const [selectedServerId, setSelectedServerId] = useState<WatchServer["id"] | null>(null);
   const selectedServer = availableServers.find((server) => server.id === selectedServerId) ?? availableServers[0];
@@ -244,8 +264,9 @@ export function WatchPlayer({
             <div className="video-frame">
               {selectedServer ? (
                 <VideoPlayback
-                  key={`${selectedEpisode}:${selectedServer.id}:${selectedServer.url}`}
+                  key={`${selectedEpisode}:${selectedServer.id}:${selectedServer.url}:${selectedServer.audioUrl ?? ""}`}
                   streamUrl={selectedServer.url}
+                  audioUrl={selectedServer.audioUrl}
                   poster={poster}
                   title={`${title.title} Episode ${selectedEpisode}`}
                 />

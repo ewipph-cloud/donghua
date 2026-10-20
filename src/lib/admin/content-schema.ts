@@ -41,6 +41,7 @@ export const contentSchema = z.object({
   stream_url: optionalUrl,
   stream_url_okru: optionalUrl.default(null),
   stream_url_dailymotion: optionalUrl.default(null),
+  stream_url_dailymotion_audio: optionalUrl.default(null),
   featured: z.boolean(),
   published: z.boolean(),
 });
@@ -67,6 +68,7 @@ export const episodeSchema = z.object({
   stream_url: optionalUrl,
   stream_url_okru: optionalUrl.default(null),
   stream_url_dailymotion: optionalUrl.default(null),
+  stream_url_dailymotion_audio: optionalUrl.default(null),
   published: z.boolean(),
 });
 
