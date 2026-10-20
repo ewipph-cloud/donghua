@@ -87,6 +87,13 @@ function VideoPlayback({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackError, setPlaybackError] = useState(false);
   const source = getPlaybackSource(streamUrl);
+  const isDailymotionCdn = (() => {
+    const hostname = new URL(streamUrl).hostname.toLowerCase();
+    return hostname === "dmcdn.net" || hostname.endsWith(".dmcdn.net");
+  })();
+  const playbackUrl = isDailymotionCdn
+    ? `/api/video-proxy?url=${encodeURIComponent(streamUrl)}`
+    : streamUrl;
 
   useEffect(() => {
     if (source.type !== "hls") return;
@@ -95,9 +102,19 @@ function VideoPlayback({
 
     let disposed = false;
     let hls: import("hls.js").default | null = null;
+    let nativeFallbackAttempted = false;
 
     async function attachStream(videoElement: HTMLVideoElement) {
       try {
+        if (
+          isDailymotionCdn &&
+          videoElement.canPlayType("application/vnd.apple.mpegurl")
+        ) {
+          nativeFallbackAttempted = true;
+          videoElement.src = playbackUrl;
+          return;
+        }
+
         const { default: Hls } = await import("hls.js");
         if (disposed) return;
 
@@ -105,12 +122,21 @@ function VideoPlayback({
           hls = new Hls();
           hls.on(Hls.Events.ERROR, (_event, data) => {
             if (data.fatal) {
-              setPlaybackError(true);
               hls?.destroy();
               hls = null;
+              if (
+                !nativeFallbackAttempted &&
+                isDailymotionCdn &&
+                videoElement.canPlayType("application/vnd.apple.mpegurl")
+              ) {
+                nativeFallbackAttempted = true;
+                videoElement.src = playbackUrl;
+              } else {
+                setPlaybackError(true);
+              }
             }
           });
-          hls.loadSource(streamUrl);
+          hls.loadSource(playbackUrl);
           hls.attachMedia(videoElement);
         } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
           videoElement.src = streamUrl;
@@ -127,7 +153,7 @@ function VideoPlayback({
       disposed = true;
       hls?.destroy();
     };
-  }, [source.type, streamUrl]);
+  }, [isDailymotionCdn, playbackUrl, source.type, streamUrl]);
 
   if (source.type === "embed") {
     return (
@@ -157,8 +183,13 @@ function VideoPlayback({
       </video>
       {playbackError && (
         <div className="video-playback-error" role="alert">
-          <strong>Video tidak dapat diputar.</strong>
-          <a href={streamUrl} target="_blank" rel="noreferrer">Buka sumber video</a>
+          <span className="video-playback-error-copy">
+            <strong>Video tidak dapat diputar.</strong>
+            {isDailymotionCdn && (
+              <span>Situs tidak dapat memuat stream Dailymotion dari CDN. Periksa apakah URL masih berlaku dan dapat diakses server.</span>
+            )}
+          </span>
+          {!isDailymotionCdn && <a href={streamUrl} target="_blank" rel="noreferrer">Buka sumber video</a>}
         </div>
       )}
     </>

@@ -3474,7 +3474,19 @@ button {
   font-size: 12px;
 }
 
+.video-playback-error-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.video-playback-error-copy > span {
+  color: #c2c7ce;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .video-playback-error a {
+  flex-shrink: 0;
   color: #a4f06d;
 }
 
