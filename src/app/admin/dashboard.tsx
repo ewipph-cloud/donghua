@@ -45,6 +45,8 @@ const emptyContent: ContentInput = {
   poster_url: "",
   banner_url: "",
   stream_url: "",
+  stream_url_okru: "",
+  stream_url_dailymotion: "",
   featured: false,
   published: false,
 };
@@ -54,6 +56,8 @@ const emptyEpisode: EpisodeInput = {
   episode_number: 1,
   title: "",
   stream_url: "",
+  stream_url_okru: "",
+  stream_url_dailymotion: "",
   published: false,
 };
 
@@ -74,6 +78,8 @@ const validationFieldLabels: Record<string, string> = {
   poster_url: "URL poster",
   banner_url: "URL banner",
   stream_url: "URL stream",
+  stream_url_okru: "URL server OK.Ru",
+  stream_url_dailymotion: "URL server Dailymotion",
   featured: "Pilihan utama",
   published: "Status publikasi",
 };
@@ -199,6 +205,8 @@ export function AdminDashboard() {
       poster_url: record.poster_url ?? "",
       banner_url: record.banner_url ?? "",
       stream_url: record.stream_url ?? "",
+      stream_url_okru: record.stream_url_okru ?? "",
+      stream_url_dailymotion: record.stream_url_dailymotion ?? "",
       featured: record.featured,
       published: record.published,
     } : { ...emptyContent });
@@ -223,6 +231,8 @@ export function AdminDashboard() {
       episode_number: record.episode_number,
       title: record.title,
       stream_url: record.stream_url ?? "",
+      stream_url_okru: record.stream_url_okru ?? "",
+      stream_url_dailymotion: record.stream_url_dailymotion ?? "",
       published: record.published,
     } : {
       ...emptyEpisode,
@@ -344,6 +354,8 @@ export function AdminDashboard() {
         poster_url: content.poster_url ?? "",
         banner_url: content.banner_url ?? "",
         stream_url: content.stream_url ?? "",
+        stream_url_okru: content.stream_url_okru ?? "",
+        stream_url_dailymotion: content.stream_url_dailymotion ?? "",
         featured: content.featured,
         published: !content.published,
       });
@@ -458,7 +470,7 @@ export function AdminDashboard() {
                 <tr key={episode.id}>
                   <td><div className="content-cell"><span className="episode-icon"><BookOpen size={15} /></span><span><strong>{episode.content_title}</strong><small>{episode.title || `Episode ${episode.episode_number}`}</small></span></div></td>
                   <td className="table-episode">EP {episode.episode_number.toString().padStart(2, "0")}</td>
-                  <td><span className={`stream-link${episode.stream_url ? "" : " stream-missing"}`}>{episode.stream_url ? "Tautan tersimpan" : "Belum ada sumber"}</span></td>
+                  <td><span className={`stream-link${episode.stream_url || episode.stream_url_okru || episode.stream_url_dailymotion ? "" : " stream-missing"}`}>{episode.stream_url || episode.stream_url_okru || episode.stream_url_dailymotion ? "Tautan tersimpan" : "Belum ada sumber"}</span></td>
                   <td><span className={`publish-status ${episode.published ? "status-published" : "status-draft"}`}><i />{episode.published ? "Terbit" : "Draft"}</span></td>
                   <td><div className="table-actions">
                     <button type="button" title="Edit" aria-label={`Edit episode ${episode.episode_number}`} onClick={() => openEpisodeModal(episode)}><Pencil size={15} /></button>
@@ -471,7 +483,7 @@ export function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        <div className="episode-note"><AlertCircle size={14} /> URL episode dipakai lebih dulu daripada URL stream utama. Gunakan file MP4/WebM/HLS langsung atau URL embed HTTPS dari provider yang mengizinkan iframe.</div>
+        <div className="episode-note"><AlertCircle size={14} /> URL server episode dipakai lebih dulu daripada URL server utama. OK.Ru dan Dailymotion dapat disimpan sebagai server alternatif; gunakan tautan HTTPS.</div>
       </section>
 
       {modal && (
@@ -508,7 +520,9 @@ export function AdminDashboard() {
                       setUploadingImages((count) => Math.max(0, count + (uploading ? 1 : -1)))
                     }
                   />
-                  <label className="form-full">URL stream utama (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
+                  <label className="form-full">URL server lain (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
+                  <label className="form-full">URL server OK.Ru<input type="url" value={formContent.stream_url_okru ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="https://ok.ru/video/... atau URL embed OK.Ru" /></label>
+                  <label className="form-full">URL server Dailymotion<input type="url" value={formContent.stream_url_dailymotion ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://.../manifest.m3u8 atau URL Dailymotion" /></label>
                 </div>
                 <div className="form-switches">
                   <label><input type="checkbox" checked={formContent.featured} onChange={(event) => setFormContent((form) => ({ ...form, featured: event.target.checked }))} /><span><strong>Pilihan utama</strong><small>Tampilkan sebagai rekomendasi unggulan</small></span></label>
@@ -540,10 +554,12 @@ export function AdminDashboard() {
                   })}>{contents.map((content) => <option key={content.id} value={content.id}>{content.title}</option>)}</select></label>
                   <label>Nomor episode<input type="number" min="0" max="9999" required value={formEpisode.episode_number} onChange={(event) => setFormEpisode((form) => ({ ...form, episode_number: Number(event.target.value) }))} /></label>
                   <label>Judul episode<input value={formEpisode.title} onChange={(event) => setFormEpisode((form) => ({ ...form, title: event.target.value }))} placeholder="Pertemuan baru" /></label>
-                  <label className="form-full">URL stream berizin<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
+                  <label className="form-full">URL server lain (opsional)<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
+                  <label className="form-full">URL server OK.Ru<input type="url" value={formEpisode.stream_url_okru ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="https://ok.ru/video/... atau URL embed OK.Ru" /></label>
+                  <label className="form-full">URL server Dailymotion<input type="url" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://.../manifest.m3u8 atau URL Dailymotion" /></label>
                 </div>
                 <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan pada katalog publik</small></span></label></div>
-                <div className="episode-form-note"><AlertCircle size={14} /> Didukung: MP4/WebM/OGG, HLS (.m3u8), serta URL embed HTTPS dari provider yang mengizinkan iframe.</div>
+                <div className="episode-form-note"><AlertCircle size={14} /> Tambahkan URL pada satu atau beberapa server. Manifest HLS Dailymotion (.m3u8) akan diputar langsung; OK.Ru memakai player embed.</div>
                 {formError && <div className="form-error" role="alert"><AlertCircle size={15} />{formError}</div>}
                 <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving || !contents.length}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{saving ? "Menyimpan..." : "Simpan episode"}</button></footer>
               </form>

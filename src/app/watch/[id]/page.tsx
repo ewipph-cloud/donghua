@@ -13,7 +13,25 @@ type WatchPageProps = {
 type WatchEpisode = {
   episodeNumber: number;
   streamUrl: string | null;
+  streamUrlOkru: string | null;
+  streamUrlDailymotion: string | null;
 };
+
+type WatchServer = {
+  id: "other" | "okru" | "dailymotion";
+  name: string;
+  url: string;
+};
+
+function getServers(streamUrl: string | null, streamUrlOkru: string | null, streamUrlDailymotion: string | null) {
+  return [
+    streamUrl ? { id: "other" as const, name: "Server lain", url: streamUrl } : null,
+    streamUrlOkru ? { id: "okru" as const, name: "OK.Ru", url: streamUrlOkru } : null,
+    streamUrlDailymotion
+      ? { id: "dailymotion" as const, name: "Dailymotion", url: streamUrlDailymotion }
+      : null,
+  ].filter((server): server is WatchServer => server !== null);
+}
 
 export default function WatchPage({ params }: WatchPageProps) {
   return (
@@ -28,7 +46,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
 
   const { id } = await params;
   let selected = series.find((item) => item.id === id);
-  let contentStreamUrl: string | null = null;
+  let contentServers: WatchServer[] = [];
   let availableEpisodes: WatchEpisode[] = [];
   let databaseWarning = "";
 
@@ -36,7 +54,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("anime_content")
-      .select("id,slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,stream_url,synopsis")
+      .select("id,slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,stream_url,stream_url_okru,stream_url_dailymotion,synopsis")
       .eq("slug", id)
       .eq("published", true)
       .maybeSingle();
@@ -53,7 +71,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
     if (data) {
       const { data: episodeRows, error: episodeError } = await supabase
         .from("anime_episodes")
-        .select("episode_number,stream_url")
+        .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion")
         .eq("content_id", data.id)
         .eq("published", true)
         .order("episode_number", { ascending: false })
@@ -81,11 +99,13 @@ async function WatchPageContent({ params }: WatchPageProps) {
         color: "#373f9c",
         summary: data.synopsis,
       } satisfies Series;
-      contentStreamUrl = data.stream_url;
+      contentServers = getServers(data.stream_url, data.stream_url_okru, data.stream_url_dailymotion);
       availableEpisodes = (episodeRows ?? [])
         .map((episode) => ({
           episodeNumber: episode.episode_number,
           streamUrl: episode.stream_url,
+          streamUrlOkru: episode.stream_url_okru,
+          streamUrlDailymotion: episode.stream_url_dailymotion,
         }))
         .reverse();
     } else if (!databaseWarning) {
@@ -102,17 +122,19 @@ async function WatchPageContent({ params }: WatchPageProps) {
   if (availableEpisodes.length) {
     episodes = [...availableEpisodes];
     if (metadataEpisode && !episodes.some((episode) => episode.episodeNumber === metadataEpisode)) {
-      episodes.push({ episodeNumber: metadataEpisode, streamUrl: contentStreamUrl });
+      episodes.push({ episodeNumber: metadataEpisode, streamUrl: null, streamUrlOkru: null, streamUrlDailymotion: null });
     }
     episodes.sort((left, right) => left.episodeNumber - right.episodeNumber);
   } else if (isSupabaseConfigured() && !databaseWarning) {
     episodes = metadataEpisode
-      ? [{ episodeNumber: metadataEpisode, streamUrl: contentStreamUrl }]
+      ? [{ episodeNumber: metadataEpisode, streamUrl: null, streamUrlOkru: null, streamUrlDailymotion: null }]
       : [];
   } else {
     episodes = Array.from({ length: Math.min(12, fallbackEpisode) }, (_, index) => ({
       episodeNumber: Math.max(1, fallbackEpisode - Math.min(12, fallbackEpisode) + index + 1),
       streamUrl: null,
+      streamUrlOkru: null,
+      streamUrlDailymotion: null,
     }));
   }
 
@@ -120,7 +142,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
     <WatchPlayer
       title={selected}
       episodes={episodes}
-      streamUrl={contentStreamUrl}
+      servers={contentServers}
       databaseWarning={databaseWarning}
     />
   );

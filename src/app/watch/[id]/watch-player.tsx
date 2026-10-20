@@ -17,6 +17,14 @@ import { imageUrl, type Series } from "@/lib/series";
 type WatchEpisode = {
   episodeNumber: number;
   streamUrl: string | null;
+  streamUrlOkru: string | null;
+  streamUrlDailymotion: string | null;
+};
+
+type WatchServer = {
+  id: "other" | "okru" | "dailymotion";
+  name: string;
+  url: string;
 };
 
 function getPlaybackSource(streamUrl: string) {
@@ -35,6 +43,25 @@ function getPlaybackSource(streamUrl: string) {
       type: "embed" as const,
       url: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}`,
     };
+  }
+
+  if (hostname === "ok.ru" || hostname.endsWith(".ok.ru")) {
+    const videoId = url.pathname.match(/^\/video\/([^/?]+)/)?.[1];
+    if (videoId) {
+      return { type: "embed" as const, url: `https://ok.ru/videoembed/${encodeURIComponent(videoId)}` };
+    }
+  }
+
+  if (hostname === "dai.ly" || hostname === "www.dailymotion.com" || hostname === "dailymotion.com") {
+    const videoId = hostname === "dai.ly"
+      ? url.pathname.split("/").filter(Boolean)[0]
+      : url.pathname.match(/^\/video\/([^/?]+)/)?.[1]?.split("_")[0];
+    if (videoId) {
+      return {
+        type: "embed" as const,
+        url: `https://www.dailymotion.com/embed/video/${encodeURIComponent(videoId)}`,
+      };
+    }
   }
 
   if (url.pathname.toLowerCase().endsWith(".m3u8")) {
@@ -141,12 +168,12 @@ function VideoPlayback({
 export function WatchPlayer({
   title,
   episodes,
-  streamUrl,
+  servers,
   databaseWarning,
 }: Readonly<{
   title: Series;
   episodes: WatchEpisode[];
-  streamUrl: string | null;
+  servers: WatchServer[];
   databaseWarning: string;
 }>) {
   const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
@@ -154,8 +181,21 @@ export function WatchPlayer({
   const [selectedEpisode, setSelectedEpisode] = useState(
     Math.max(latestMetadataEpisode, latestAvailableEpisode),
   );
-  const selectedStreamUrl =
-    episodes.find((episode) => episode.episodeNumber === selectedEpisode)?.streamUrl || streamUrl;
+  const episode = episodes.find((item) => item.episodeNumber === selectedEpisode);
+  const episodeServers = episode
+    ? [
+        episode.streamUrl ? { id: "other" as const, name: "Server lain", url: episode.streamUrl } : null,
+        episode.streamUrlOkru
+          ? { id: "okru" as const, name: "OK.Ru", url: episode.streamUrlOkru }
+          : null,
+        episode.streamUrlDailymotion
+          ? { id: "dailymotion" as const, name: "Dailymotion", url: episode.streamUrlDailymotion }
+          : null,
+      ].filter((server): server is WatchServer => server !== null)
+    : [];
+  const availableServers = episodeServers.length ? episodeServers : servers;
+  const [selectedServerId, setSelectedServerId] = useState<WatchServer["id"] | null>(null);
+  const selectedServer = availableServers.find((server) => server.id === selectedServerId) ?? availableServers[0];
   const poster = imageUrl(title.bannerImage ?? title.image, 1400);
 
   return (
@@ -163,7 +203,7 @@ export function WatchPlayer({
       <header className="watch-topbar">
         <Link href="/" className="watch-back"><ArrowLeft size={17} /> <span>Kembali ke beranda</span></Link>
         <Link href="/" className="watch-mark"><span className="watch-mark-icon"><Clapperboard size={17} /></span><strong>DONGHUA<span>ID</span></strong></Link>
-        <span className="watch-live"><i /> {selectedStreamUrl ? "STREAMING AKTIF" : "PLAYER PREVIEW"}</span>
+        <span className="watch-live"><i /> {selectedServer ? "STREAMING AKTIF" : "PLAYER PREVIEW"}</span>
       </header>
 
       <div className="watch-main">
@@ -171,10 +211,10 @@ export function WatchPlayer({
         <div className="watch-layout">
           <section className="watch-primary">
             <div className="video-frame">
-              {selectedStreamUrl ? (
+              {selectedServer ? (
                 <VideoPlayback
-                  key={`${selectedEpisode}:${selectedStreamUrl}`}
-                  streamUrl={selectedStreamUrl}
+                  key={`${selectedEpisode}:${selectedServer.id}:${selectedServer.url}`}
+                  streamUrl={selectedServer.url}
                   poster={poster}
                   title={`${title.title} Episode ${selectedEpisode}`}
                 />
@@ -193,6 +233,22 @@ export function WatchPlayer({
                 </>
               )}
             </div>
+            {availableServers.length > 0 && (
+              <div className="video-server-list" role="group" aria-label="Pilih server video">
+                <span className="video-server-label">SERVER VIDEO</span>
+                {availableServers.map((server) => (
+                  <button
+                    key={server.id}
+                    type="button"
+                    className={`video-server-option${selectedServer?.id === server.id ? " video-server-selected" : ""}`}
+                    aria-pressed={selectedServer?.id === server.id}
+                    onClick={() => setSelectedServerId(server.id)}
+                  >
+                    {server.name}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="watch-title-row">
               <div>
@@ -202,7 +258,7 @@ export function WatchPlayer({
               </div>
               <Link className="watch-detail-link" href="/#rilisan">Lihat katalog <ChevronRight size={14} /></Link>
             </div>
-            <div className={`watch-note${databaseWarning ? " watch-note-warning" : ""}`}><span><Check size={14} /></span><p><strong>{databaseWarning ? "Katalog belum tersambung" : selectedStreamUrl ? "Sumber video tersedia" : "Menunggu sumber video"}</strong><small>{databaseWarning || (selectedStreamUrl ? "Stream aktif untuk episode ini." : "Tambahkan URL stream di panel admin untuk mulai menonton.")}</small></p></div>
+            <div className={`watch-note${databaseWarning ? " watch-note-warning" : ""}`}><span><Check size={14} /></span><p><strong>{databaseWarning ? "Katalog belum tersambung" : selectedServer ? "Sumber video tersedia" : "Menunggu sumber video"}</strong><small>{databaseWarning || (selectedServer ? `Stream aktif melalui server ${selectedServer.name}.` : "Tambahkan URL server di panel admin untuk mulai menonton.")}</small></p></div>
           </section>
 
           <aside className="watch-episodes">

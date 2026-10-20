@@ -39,6 +39,8 @@ export const contentSchema = z.object({
   poster_url: optionalImageUrl,
   banner_url: optionalImageUrl,
   stream_url: optionalUrl,
+  stream_url_okru: optionalUrl.default(null),
+  stream_url_dailymotion: optionalUrl.default(null),
   featured: z.boolean(),
   published: z.boolean(),
 });
@@ -63,6 +65,8 @@ export const episodeSchema = z.object({
   episode_number: z.number().int().min(0).max(9999),
   title: z.string().trim().max(120).default(""),
   stream_url: optionalUrl,
+  stream_url_okru: optionalUrl.default(null),
+  stream_url_dailymotion: optionalUrl.default(null),
   published: z.boolean(),
 });
 

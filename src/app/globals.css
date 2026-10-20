@@ -3426,6 +3426,40 @@ button {
   object-fit: contain;
 }
 
+.video-server-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 2px 0;
+}
+
+.video-server-label {
+  margin-right: 3px;
+  color: #7f8792;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.video-server-option {
+  min-height: 30px;
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: #171b21;
+  color: #b8bec6;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.video-server-option:hover,
+.video-server-option.video-server-selected {
+  border-color: rgba(164, 240, 109, 0.5);
+  background: rgba(164, 240, 109, 0.1);
+  color: #c5f59e;
+}
+
 .video-playback-error {
   position: absolute;
   z-index: 2;
