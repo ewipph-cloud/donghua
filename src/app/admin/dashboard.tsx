@@ -559,7 +559,7 @@ export function AdminDashboard() {
                   <label className="form-full">URL server Dailymotion<input type="url" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://.../manifest.m3u8 atau URL Dailymotion" /></label>
                 </div>
                 <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan pada katalog publik</small></span></label></div>
-                <div className="episode-form-note"><AlertCircle size={14} /> Tambahkan URL pada satu atau beberapa server. Manifest HLS Dailymotion (.m3u8) akan diputar langsung; OK.Ru memakai player embed.</div>
+                <div className="episode-form-note"><AlertCircle size={14} /> Tambahkan URL pada satu atau beberapa server. Link manifest CDN Dailymotion akan dibuka melalui player embed resminya; OK.Ru juga memakai player embed.</div>
                 {formError && <div className="form-error" role="alert"><AlertCircle size={15} />{formError}</div>}
                 <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving || !contents.length}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{saving ? "Menyimpan..." : "Simpan episode"}</button></footer>
               </form>
