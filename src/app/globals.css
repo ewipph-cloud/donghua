@@ -702,6 +702,26 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
+.catalog-ad {
+  display: grid;
+  gap: 5px;
+  margin: 18px 0;
+}
+
+.catalog-ad-label {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.catalog-ad .adsbygoogle {
+  min-height: 90px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface);
+}
+
 .category-tabs {
   display: flex;
   min-width: 0;

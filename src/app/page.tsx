@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AdSenseUnit } from "@/app/adsense-unit";
 import {
   categories,
   imageUrl,
@@ -336,6 +337,8 @@ export default function Home() {
               <Bookmark size={14} /> Koleksi saya
             </button>
           </div>
+
+          {!catalogLoading && !catalogError && <AdSenseUnit />}
 
           {activeStatus === "Disimpan" ? (
             <div className="saved-intro"><Bookmark size={16} /><span>{savedIds.length ? `${savedIds.length} judul dalam koleksimu` : "Belum ada judul tersimpan. Simpan donghua yang ingin kamu tonton nanti."}</span></div>
