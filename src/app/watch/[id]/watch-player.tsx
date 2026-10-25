@@ -11,6 +11,7 @@ import {
   Clapperboard,
   Pause,
   Play,
+  Share2,
 } from "lucide-react";
 import { imageUrl, type Series } from "@/lib/series";
 
@@ -232,18 +233,20 @@ export function WatchPlayer({
   servers,
   databaseWarning,
   trackViews,
+  initialEpisode,
 }: Readonly<{
   title: Series;
   episodes: WatchEpisode[];
   servers: WatchServer[];
   databaseWarning: string;
   trackViews: boolean;
+  initialEpisode?: number;
 }>) {
   const countedSlug = useRef<string | null>(null);
   const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
   const latestAvailableEpisode = episodes.at(-1)?.episodeNumber ?? 1;
   const [selectedEpisode, setSelectedEpisode] = useState(
-    Math.max(latestMetadataEpisode, latestAvailableEpisode),
+    initialEpisode ?? Math.max(latestMetadataEpisode, latestAvailableEpisode),
   );
   const episode = episodes.find((item) => item.episodeNumber === selectedEpisode);
   const episodeServers = getEpisodeServers(episode);
@@ -251,6 +254,34 @@ export function WatchPlayer({
   const [selectedServerId, setSelectedServerId] = useState<WatchServer["id"] | null>(null);
   const selectedServer = availableServers.find((server) => server.id === selectedServerId) ?? availableServers[0];
   const poster = imageUrl(title.bannerImage ?? title.image, 1400);
+  const [shareResult, setShareResult] = useState<{ url: string; message: string } | null>(null);
+  const shareUrl = `/watch/${encodeURIComponent(title.id)}?episode=${selectedEpisode}`;
+  const shareMessage = shareResult?.url === shareUrl ? shareResult.message : "";
+
+  async function shareTitle() {
+    const url = new URL(shareUrl, window.location.origin).toString();
+    const shareData = { title: `${title.title} Episode ${selectedEpisode}`, url };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        setShareResult({ url: shareUrl, message: "Tautan berhasil dibagikan." });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        console.error("Gagal membagikan tautan.", error);
+        setShareResult({ url: shareUrl, message: "Tautan tidak dapat dibagikan." });
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareResult({ url: shareUrl, message: "Tautan disalin." });
+    } catch (error) {
+      console.error("Gagal menyalin tautan.", error);
+      setShareResult({ url: shareUrl, message: "Tautan tidak dapat disalin dari browser ini." });
+    }
+  }
 
   useEffect(() => {
     if (!trackViews || countedSlug.current === title.id) return;
@@ -302,6 +333,13 @@ export function WatchPlayer({
                   </div>
                 </>
               )}
+            </div>
+            <div className="video-share-row">
+              <button className="video-share-button" type="button" onClick={() => void shareTitle()}>
+                <Share2 size={15} />
+                Bagikan
+              </button>
+              <span className="video-share-message" role="status" aria-live="polite">{shareMessage}</span>
             </div>
             {availableServers.length > 0 && (
               <div className="video-server-list" role="group" aria-label="Pilih server video">

@@ -1,13 +1,15 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import type { Metadata } from "next";
 import { WatchPlayer } from "@/app/watch/[id]/watch-player";
-import { series, type Series } from "@/lib/series";
+import { imageUrl, series, type Series } from "@/lib/series";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 type WatchPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ episode?: string | string[] }>;
 };
 
 type WatchEpisode = {
@@ -24,6 +26,79 @@ type WatchServer = {
   url: string;
   audioUrl?: string;
 };
+
+function parseEpisodeNumber(value: string | string[] | undefined) {
+  if (typeof value !== "string" || !/^\d{1,5}$/.test(value)) return undefined;
+  const episodeNumber = Number(value);
+  return episodeNumber > 0 ? episodeNumber : undefined;
+}
+
+export async function generateMetadata({ params, searchParams }: WatchPageProps): Promise<Metadata> {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  let selected = series.find((item) => item.id === id);
+
+  if (isSupabaseConfigured()) {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("anime_content")
+      .select("slug,title,latest_episode,poster_url,banner_url,synopsis")
+      .eq("slug", id)
+      .eq("published", true)
+      .maybeSingle();
+
+    if (error && error.code !== "PGRST205") {
+      console.error("Gagal memuat metadata berbagi halaman tontonan.", error);
+    }
+
+    if (data) {
+      selected = {
+        id: data.slug,
+        title: data.title,
+        episode: data.latest_episode,
+        genre: "",
+        rating: "",
+        views: "",
+        status: "Ongoing",
+        image: data.poster_url ?? data.banner_url ?? "photo-1518709268805-4e9042af9f23",
+        bannerImage: data.banner_url ?? undefined,
+        color: "#373f9c",
+        summary: data.synopsis,
+      };
+    }
+  }
+
+  if (!selected) {
+    return {
+      title: "Donghua ID — Jelajahi Dunia Lain",
+      description: "Tonton donghua favoritmu di Donghua ID.",
+    };
+  }
+
+  const episodeNumber =
+    parseEpisodeNumber(query.episode) ??
+    Number(selected.episode.match(/\d+/)?.[0] ?? 1);
+  const episodeTitle = `${selected.title} Episode ${episodeNumber}`;
+  const description = selected.summary || `Tonton ${episodeTitle} di Donghua ID.`;
+  const image = imageUrl(selected.bannerImage ?? selected.image, 1200);
+
+  return {
+    title: `${episodeTitle} | Donghua ID`,
+    description,
+    openGraph: {
+      title: episodeTitle,
+      description,
+      type: "website",
+      siteName: "Donghua ID",
+      images: [{ url: image, width: 1200, height: 630, alt: episodeTitle }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: episodeTitle,
+      description,
+      images: [image],
+    },
+  };
+}
 
 function getServers(
   streamUrl: string | null,
@@ -46,18 +121,19 @@ function getServers(
   return servers.filter((server): server is WatchServer => server !== null);
 }
 
-export default function WatchPage({ params }: WatchPageProps) {
+export default function WatchPage({ params, searchParams }: WatchPageProps) {
   return (
     <Suspense fallback={<main className="watch-loading">Memuat halaman tonton...</main>}>
-      <WatchPageContent params={params} />
+      <WatchPageContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function WatchPageContent({ params }: WatchPageProps) {
+async function WatchPageContent({ params, searchParams }: WatchPageProps) {
   await connection();
 
-  const { id } = await params;
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const requestedEpisode = parseEpisodeNumber(query.episode);
   let selected = series.find((item) => item.id === id);
   let contentServers: WatchServer[] = [];
   let availableEpisodes: WatchEpisode[] = [];
@@ -179,6 +255,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
       servers={contentServers}
       databaseWarning={databaseWarning}
       trackViews={trackViews}
+      initialEpisode={requestedEpisode}
     />
   );
 }

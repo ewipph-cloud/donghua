@@ -26,6 +26,7 @@ import {
 import {
   contentRecordSchema,
   episodeRecordSchema,
+  getOkruVideoId,
   type ContentInput,
   type ContentRecord,
   type EpisodeInput,
@@ -78,7 +79,7 @@ const validationFieldLabels: Record<string, string> = {
   poster_url: "URL poster",
   banner_url: "URL banner",
   stream_url: "URL stream",
-  stream_url_okru: "URL server OK.Ru",
+  stream_url_okru: "ID video OK.Ru",
   stream_url_dailymotion: "URL server Dailymotion",
   stream_url_dailymotion_audio: "URL audio Dailymotion",
   featured: "Pilihan utama",
@@ -206,7 +207,7 @@ export function AdminDashboard() {
       poster_url: record.poster_url ?? "",
       banner_url: record.banner_url ?? "",
       stream_url: record.stream_url ?? "",
-      stream_url_okru: record.stream_url_okru ?? "",
+      stream_url_okru: getOkruVideoId(record.stream_url_okru),
       stream_url_dailymotion: record.stream_url_dailymotion ?? "",
       stream_url_dailymotion_audio: record.stream_url_dailymotion_audio ?? "",
       featured: record.featured,
@@ -233,7 +234,7 @@ export function AdminDashboard() {
       episode_number: record.episode_number,
       title: record.title,
       stream_url: record.stream_url ?? "",
-      stream_url_okru: record.stream_url_okru ?? "",
+      stream_url_okru: getOkruVideoId(record.stream_url_okru),
       stream_url_dailymotion: record.stream_url_dailymotion ?? "",
       stream_url_dailymotion_audio: record.stream_url_dailymotion_audio ?? "",
       published: record.published,
@@ -525,7 +526,7 @@ export function AdminDashboard() {
                     }
                   />
                   <label className="form-full">URL server lain (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
-                  <label className="form-full">URL server OK.Ru<input type="url" value={formContent.stream_url_okru ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="https://ok.ru/video/... atau URL embed OK.Ru" /></label>
+                  <label className="form-full">ID video OK.Ru<input type="text" inputMode="numeric" maxLength={2048} value={formContent.stream_url_okru ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="17698476395169" /><small>Masukkan ID berupa angka. URL embed OK.Ru juga bisa ditempel.</small></label>
                   <label className="form-full">URL video Dailymotion<input type="url" value={formContent.stream_url_dailymotion ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../h264_hq/.../manifest.m3u8" /></label>
                   <label className="form-full">URL audio Dailymotion (opsional)<input type="url" value={formContent.stream_url_dailymotion_audio ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion_audio: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../aac_q2_0/.../manifest.m3u8" /></label>
                 </div>
@@ -560,7 +561,7 @@ export function AdminDashboard() {
                   <label>Nomor episode<input type="number" min="0" max="9999" required value={formEpisode.episode_number} onChange={(event) => setFormEpisode((form) => ({ ...form, episode_number: Number(event.target.value) }))} /></label>
                   <label>Judul episode<input value={formEpisode.title} onChange={(event) => setFormEpisode((form) => ({ ...form, title: event.target.value }))} placeholder="Pertemuan baru" /></label>
                   <label className="form-full">URL server lain (opsional)<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
-                  <label className="form-full">URL server OK.Ru<input type="url" value={formEpisode.stream_url_okru ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="https://ok.ru/video/... atau URL embed OK.Ru" /></label>
+                  <label className="form-full">ID video OK.Ru<input type="text" inputMode="numeric" maxLength={2048} value={formEpisode.stream_url_okru ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="17698476395169" /><small>Masukkan ID berupa angka. URL embed OK.Ru juga bisa ditempel.</small></label>
                   <label className="form-full">URL video Dailymotion<input type="url" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../h264_hq/.../manifest.m3u8" /></label>
                   <label className="form-full">URL audio Dailymotion (opsional)<input type="url" value={formEpisode.stream_url_dailymotion_audio ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion_audio: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../aac_q2_0/.../manifest.m3u8" /></label>
                 </div>

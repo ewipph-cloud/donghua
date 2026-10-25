@@ -22,6 +22,39 @@ const optionalImageUrl = optionalUrl.refine((value) => {
   return hostname === "images.unsplash.com" || hostname.endsWith(".supabase.co");
 }, "Gunakan gambar dari images.unsplash.com atau Supabase Storage.");
 
+export function getOkruVideoId(value: string | null | undefined) {
+  const input = value?.trim() ?? "";
+  if (/^\d{1,30}$/.test(input)) return input;
+
+  try {
+    const url = new URL(input);
+    if (url.hostname !== "ok.ru" && !url.hostname.endsWith(".ok.ru")) return "";
+    return url.pathname.match(/^\/(?:videoembed|video)\/(\d+)(?:\/|$)/)?.[1] ?? "";
+  } catch {
+    return "";
+  }
+}
+
+const optionalOkruUrl = z
+  .string()
+  .nullable()
+  .transform((value) => value ?? "")
+  .pipe(
+    z
+      .string()
+      .trim()
+      .max(2048)
+      .refine(
+        (value) => !value || Boolean(getOkruVideoId(value)),
+        "Masukkan ID video OK.Ru berupa angka atau URL video OK.Ru yang valid.",
+      )
+      .transform((value) => {
+        const videoId = getOkruVideoId(value);
+        return videoId ? `https://ok.ru/videoembed/${videoId}?nochat=1` : "";
+      })
+      .transform((value) => value || null),
+  );
+
 export const contentSchema = z.object({
   title: z.string().trim().min(2, "Judul minimal 2 karakter.").max(120),
   slug: z
@@ -39,7 +72,7 @@ export const contentSchema = z.object({
   poster_url: optionalImageUrl,
   banner_url: optionalImageUrl,
   stream_url: optionalUrl,
-  stream_url_okru: optionalUrl.default(null),
+  stream_url_okru: optionalOkruUrl.default(null),
   stream_url_dailymotion: optionalUrl.default(null),
   stream_url_dailymotion_audio: optionalUrl.default(null),
   featured: z.boolean(),
@@ -66,7 +99,7 @@ export const episodeSchema = z.object({
   episode_number: z.number().int().min(0).max(9999),
   title: z.string().trim().max(120).default(""),
   stream_url: optionalUrl,
-  stream_url_okru: optionalUrl.default(null),
+  stream_url_okru: optionalOkruUrl.default(null),
   stream_url_dailymotion: optionalUrl.default(null),
   stream_url_dailymotion_audio: optionalUrl.default(null),
   published: z.boolean(),

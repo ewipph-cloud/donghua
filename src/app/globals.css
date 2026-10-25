@@ -3433,6 +3433,38 @@ button {
   object-fit: contain;
 }
 
+.video-share-row {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 2px 0;
+}
+
+.video-share-button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: #171b21;
+  color: #b8bec6;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.video-share-button:hover {
+  border-color: rgba(164, 240, 109, 0.5);
+  color: #c5f59e;
+}
+
+.video-share-message {
+  color: #a4f06d;
+  font-size: 10px;
+}
+
 .video-server-list {
   display: flex;
   flex-wrap: wrap;
