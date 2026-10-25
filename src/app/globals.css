@@ -716,10 +716,12 @@ button {
 }
 
 .catalog-ad .adsbygoogle {
-  min-height: 90px;
   overflow: hidden;
   border-radius: 8px;
-  background: var(--surface);
+}
+
+.catalog-ad:has(.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none;
 }
 
 .category-tabs {
