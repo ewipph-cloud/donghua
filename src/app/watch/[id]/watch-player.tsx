@@ -231,12 +231,15 @@ export function WatchPlayer({
   episodes,
   servers,
   databaseWarning,
+  trackViews,
 }: Readonly<{
   title: Series;
   episodes: WatchEpisode[];
   servers: WatchServer[];
   databaseWarning: string;
+  trackViews: boolean;
 }>) {
+  const countedSlug = useRef<string | null>(null);
   const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
   const latestAvailableEpisode = episodes.at(-1)?.episodeNumber ?? 1;
   const [selectedEpisode, setSelectedEpisode] = useState(
@@ -248,6 +251,21 @@ export function WatchPlayer({
   const [selectedServerId, setSelectedServerId] = useState<WatchServer["id"] | null>(null);
   const selectedServer = availableServers.find((server) => server.id === selectedServerId) ?? availableServers[0];
   const poster = imageUrl(title.bannerImage ?? title.image, 1400);
+
+  useEffect(() => {
+    if (!trackViews || countedSlug.current === title.id) return;
+    countedSlug.current = title.id;
+
+    void fetch(`/api/catalog/${encodeURIComponent(title.id)}/view`, {
+      method: "POST",
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error(`Pencatatan tayangan gagal (${response.status}).`);
+      }
+    }).catch((error: unknown) => {
+      console.error("Gagal mencatat tayangan.", error);
+    });
+  }, [title.id, trackViews]);
 
   return (
     <main className="watch-shell">

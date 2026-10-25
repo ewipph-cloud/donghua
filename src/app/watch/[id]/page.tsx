@@ -62,6 +62,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
   let contentServers: WatchServer[] = [];
   let availableEpisodes: WatchEpisode[] = [];
   let databaseWarning = "";
+  let trackViews = false;
 
   if (isSupabaseConfigured()) {
     const supabase = await createSupabaseServerClient();
@@ -82,6 +83,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
     }
 
     if (data) {
+      trackViews = true;
       const { data: episodeRows, error: episodeError } = await supabase
         .from("anime_episodes")
         .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion,stream_url_dailymotion_audio")
@@ -176,6 +178,7 @@ async function WatchPageContent({ params }: WatchPageProps) {
       episodes={episodes}
       servers={contentServers}
       databaseWarning={databaseWarning}
+      trackViews={trackViews}
     />
   );
 }

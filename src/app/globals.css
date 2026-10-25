@@ -996,6 +996,13 @@ button {
   text-align: center;
 }
 
+.catalog-loading {
+  padding: 22px 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
 .empty-state > svg {
   color: var(--accent);
 }

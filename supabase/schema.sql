@@ -109,6 +109,28 @@ create index if not exists anime_content_published_updated_idx
 create index if not exists anime_content_genre_idx
   on public.anime_content (genre);
 
+create or replace function public.increment_anime_content_views(content_slug text)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  updated_rows integer;
+begin
+  update public.anime_content
+  set views = views + 1
+  where slug = content_slug
+    and published;
+
+  get diagnostics updated_rows = row_count;
+  return updated_rows > 0;
+end;
+$$;
+
+revoke all on function public.increment_anime_content_views(text) from public;
+grant execute on function public.increment_anime_content_views(text) to anon, authenticated;
+
 create table if not exists public.anime_episodes (
   id uuid primary key default gen_random_uuid(),
   content_id uuid not null references public.anime_content (id) on delete cascade,

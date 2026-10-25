@@ -5,11 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   categories,
-  featured,
   imageUrl,
-  popular,
   publicSeriesSchema,
-  series,
   type Series,
 } from "@/lib/series";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -48,9 +45,11 @@ export default function Home() {
   const [storageReady, setStorageReady] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [lightTheme, setLightTheme] = useState(false);
-  const [catalogTitles, setCatalogTitles] = useState<Series[]>(series);
-  const [catalogLoaded, setCatalogLoaded] = useState(false);
-  const [catalogError, setCatalogError] = useState("");
+  const [catalogTitles, setCatalogTitles] = useState<Series[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(() => isSupabaseConfigured());
+  const [catalogError, setCatalogError] = useState(() =>
+    isSupabaseConfigured() ? "" : "Katalog database belum dikonfigurasi.",
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -86,6 +85,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
+
     let active = true;
     async function loadCatalog() {
       try {
@@ -102,12 +102,13 @@ export default function Home() {
         if (!parsed.success) throw new Error("Format katalog dari database tidak sesuai.");
         if (active) {
           setCatalogTitles(parsed.data);
-          setCatalogLoaded(true);
         }
       } catch (error) {
         if (active) {
           setCatalogError(error instanceof Error ? error.message : "Katalog tidak dapat dimuat.");
         }
+      } finally {
+        if (active) setCatalogLoading(false);
       }
     }
     void loadCatalog();
@@ -116,16 +117,12 @@ export default function Home() {
     };
   }, []);
 
-  const dynamicFeatured = catalogLoaded
-    ? catalogTitles.filter((item) => item.featured).slice(0, 3)
-    : featured;
-  const heroTitles = catalogLoaded
-    ? dynamicFeatured.length ? dynamicFeatured : catalogTitles.slice(0, 3)
-    : featured;
+  const dynamicFeatured = catalogTitles.filter((item) => item.featured).slice(0, 3);
+  const heroTitles = dynamicFeatured.length ? dynamicFeatured : catalogTitles.slice(0, 3);
   const currentFeature = heroTitles.length ? heroTitles[activeFeature % heroTitles.length] : null;
-  const popularTitles = catalogLoaded
-    ? [...catalogTitles].sort((left, right) => (right.viewCount ?? 0) - (left.viewCount ?? 0)).slice(0, 5)
-    : popular;
+  const popularTitles = [...catalogTitles]
+    .sort((left, right) => (right.viewCount ?? 0) - (left.viewCount ?? 0))
+    .slice(0, 5);
   const filteredSeries = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("id");
     return catalogTitles.filter((item) => {
@@ -290,12 +287,12 @@ export default function Home() {
         <section className="hero hero-empty" id="beranda">
           <div className="page-width hero-empty-content">
             <Film size={27} />
-            <h1>Belum ada konten diterbitkan.</h1>
-            <p>Judul yang diterbitkan dari dashboard admin akan tampil di sini.</p>
+            <h1>{catalogLoading ? "Memuat katalog..." : catalogError ? "Katalog tidak tersedia." : "Belum ada konten diterbitkan."}</h1>
+            <p>{catalogLoading || catalogError ? "Konten akan tampil setelah katalog berhasil dimuat." : "Judul yang diterbitkan dari dashboard admin akan tampil di sini."}</p>
           </div>
         </section>
       )}
-      {catalogError && <div className="catalog-connection-error page-width" role="status">{catalogError} Menampilkan katalog demo.</div>}
+      {catalogError && <div className="catalog-connection-error page-width" role="status">{catalogError}</div>}
 
       <div className="page-width content-layout">
         <section className="catalog-section" id="rilisan">
@@ -344,7 +341,9 @@ export default function Home() {
             <div className="saved-intro"><Bookmark size={16} /><span>{savedIds.length ? `${savedIds.length} judul dalam koleksimu` : "Belum ada judul tersimpan. Simpan donghua yang ingin kamu tonton nanti."}</span></div>
           ) : null}
 
-          {filteredSeries.length > 0 && activeStatus !== "Disimpan" ? (
+          {catalogLoading ? (
+            <div className="catalog-loading" role="status">Memuat katalog...</div>
+          ) : filteredSeries.length > 0 && activeStatus !== "Disimpan" ? (
             <div className="series-grid">
               {filteredSeries.map((item, index) => (
                 <article className="series-card" key={item.id} style={{ animationDelay: `${index * 35}ms` }}>
@@ -420,7 +419,7 @@ export default function Home() {
               <ArrowDownWideNarrow className="sidebar-sort" size={16} />
             </div>
             <div className="popular-list">
-              {popularTitles.map((item, index) => (
+              {popularTitles.length ? popularTitles.map((item, index) => (
                 <button className="popular-item" key={item.id} type="button" onClick={() => setSelectedSeries(item)}>
                   <span className={`popular-rank${index < 3 ? " rank-top" : ""}`}>0{index + 1}</span>
                   <span className="popular-thumb" style={{ backgroundColor: item.color }}>
@@ -429,7 +428,7 @@ export default function Home() {
                   <span className="popular-copy"><strong>{item.title}</strong><small>{item.episode} <i /> <Eye size={11} /> {item.views}</small></span>
                   <ArrowRight className="popular-arrow" size={14} />
                 </button>
-              ))}
+              )) : !catalogLoading && <div className="catalog-loading">Belum ada konten tersedia.</div>}
             </div>
             <a className="sidebar-link" href="#rilisan">Jelajahi peringkat <ArrowRight size={14} /></a>
           </section>
