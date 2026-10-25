@@ -121,6 +121,24 @@ export default function Home() {
   const dynamicFeatured = catalogTitles.filter((item) => item.featured).slice(0, 3);
   const heroTitles = dynamicFeatured.length ? dynamicFeatured : catalogTitles.slice(0, 3);
   const currentFeature = heroTitles.length ? heroTitles[activeFeature % heroTitles.length] : null;
+
+  useEffect(() => {
+    if (
+      heroTitles.length < 2 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        setActiveFeature((current) => (current + 1) % heroTitles.length);
+      }
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [heroTitles.length]);
+
   const popularTitles = [...catalogTitles]
     .sort((left, right) => (right.viewCount ?? 0) - (left.viewCount ?? 0))
     .slice(0, 5);
