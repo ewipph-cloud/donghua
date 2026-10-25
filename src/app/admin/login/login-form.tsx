@@ -57,7 +57,7 @@ export function AdminLoginForm() {
         <div className="login-icon"><ShieldCheck size={24} /></div>
         <p className="login-eyebrow">AREA TERBATAS</p>
         <h1>Selamat datang<br />kembali.</h1>
-        <p className="login-description">Masuk ke panel untuk mengelola katalog dan episode.</p>
+        <p className="login-description">Masuk ke panel untuk mengelola donghua dan episode.</p>
 
         {!configured && (
           <div className="login-alert login-setup-alert" role="status">

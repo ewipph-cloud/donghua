@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Donghua ID — Jelajahi Dunia Lain",
   description:
-    "Temukan donghua favoritmu, ikuti episode terbaru, dan simpan cerita pilihan dalam satu katalog.",
+    "Temukan donghua favoritmu, ikuti episode terbaru, dan simpan cerita pilihan dalam satu tempat.",
   appleWebApp: {
     capable: true,
     title: "Donghua ID",

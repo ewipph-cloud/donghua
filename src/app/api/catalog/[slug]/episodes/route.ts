@@ -6,7 +6,7 @@ type RouteContext = { params: Promise<{ slug: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
   if (!isSupabaseConfigured()) {
-    return Response.json({ error: "Katalog database belum dikonfigurasi." }, { status: 503 });
+    return Response.json({ error: "Database belum dikonfigurasi." }, { status: 503 });
   }
 
   const { slug } = await context.params;

@@ -1,6 +1,6 @@
 # Donghua ID
 
-Katalog donghua berbahasa Indonesia dengan halaman pemutar, login administrator, serta dashboard untuk mengelola judul dan episode.
+Situs donghua berbahasa Indonesia dengan halaman pemutar, login administrator, serta dashboard untuk mengelola judul dan episode.
 
 ## Menjalankan aplikasi
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Buka `http://localhost:3000`. Katalog contoh dan UI pemutar dapat dilihat tanpa koneksi backend.
+Buka `http://localhost:3000`. UI pemutar dapat dilihat tanpa koneksi backend.
 
 ## PWA
 
@@ -46,7 +46,7 @@ Jangan pernah menaruh `service_role` key di browser, `.env.example`, atau source
 - Dashboard ringkasan, jumlah konten/episode, dan status publikasi.
 - CRUD judul, pencarian/filter, metadata, upload poster/banner ke bucket Supabase Storage, sinopsis, rating, unggulan, dan publikasi.
 - CRUD episode, nomor episode, status publikasi, dan URL server HTTPS (server lain, OK.Ru, dan Dailymotion).
-- Katalog publik membaca konten terbit dari Supabase setelah konfigurasi tersedia.
+- Daftar publik membaca konten terbit dari Supabase setelah konfigurasi tersedia.
 
 Upload poster/banner menerima JPG, PNG, WebP, dan AVIF hingga 6 MB. Setelah memperbarui project, jalankan ulang [`supabase/schema.sql`](./supabase/schema.sql) di Supabase SQL Editor untuk membuat bucket publik `content-images` dan kebijakan upload/hapus khusus admin.
 

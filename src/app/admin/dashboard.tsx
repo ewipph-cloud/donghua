@@ -378,7 +378,7 @@ export function AdminDashboard() {
         <div>
           <div className="dashboard-eyebrow"><span /> CONTENT STUDIO</div>
           <h1>Ringkasan <span>dashboard</span></h1>
-          <p>Kelola katalog donghua dan episode dari satu tempat.</p>
+          <p>Kelola daftar donghua dan episode dari satu tempat.</p>
         </div>
         <button className="dashboard-add-button" type="button" onClick={() => openContentModal(null)}>
           <Plus size={17} /> Tambah konten
@@ -393,7 +393,7 @@ export function AdminDashboard() {
           <span className="stat-icon stat-icon-green"><Clapperboard size={18} /></span>
           <span className="stat-label">TOTAL KONTEN</span>
           <strong>{loading ? "—" : contents.length.toLocaleString("id-ID")}</strong>
-          <small><Film size={12} /> Seluruh judul di katalog</small>
+          <small><Film size={12} /> Seluruh judul</small>
         </article>
         <article className="admin-stat-card">
           <span className="stat-icon stat-icon-blue"><Radio size={18} /></span>
@@ -418,7 +418,7 @@ export function AdminDashboard() {
       <section className="admin-panel" id="konten">
         <div className="admin-panel-heading">
           <div>
-            <div className="panel-overline">KATALOG & PUBLIKASI</div>
+            <div className="panel-overline">DONGHUA & PUBLIKASI</div>
             <h2>Manajemen konten</h2>
             <p>Tambah judul, perbarui metadata, dan atur status publikasi.</p>
           </div>
@@ -495,7 +495,7 @@ export function AdminDashboard() {
         <div className="admin-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setModal(null); }}>
           <section className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
             <header className="admin-modal-header">
-              <div><span className="panel-overline">{modal.type === "content" ? "DETAIL KATALOG" : "JADWAL TAYANG"}</span><h2 id="admin-modal-title">{modal.type === "content" ? modal.record ? "Edit konten" : "Tambah konten" : modal.record ? "Edit episode" : "Tambah episode"}</h2></div>
+              <div><span className="panel-overline">{modal.type === "content" ? "DETAIL DONGHUA" : "JADWAL TAYANG"}</span><h2 id="admin-modal-title">{modal.type === "content" ? modal.record ? "Edit konten" : "Tambah konten" : modal.record ? "Edit episode" : "Tambah episode"}</h2></div>
               <button type="button" aria-label="Tutup formulir" onClick={() => setModal(null)}><X size={18} /></button>
             </header>
             {modal.type === "content" ? (
@@ -565,7 +565,7 @@ export function AdminDashboard() {
                   <label className="form-full">URL video Dailymotion<input type="url" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../h264_hq/.../manifest.m3u8" /></label>
                   <label className="form-full">URL audio Dailymotion (opsional)<input type="url" value={formEpisode.stream_url_dailymotion_audio ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion_audio: event.target.value }))} placeholder="https://vod3.cf.dmcdn.net/.../aac_q2_0/.../manifest.m3u8" /></label>
                 </div>
-                <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan pada katalog publik</small></span></label></div>
+                <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan kepada pengunjung</small></span></label></div>
                 <div className="episode-form-note"><AlertCircle size={14} /> Jika manifest Dailymotion memisahkan track, isi URL video h264_hq dan URL audio aac_q2_0. Keduanya digabung oleh player situs melalui proxy HLS.</div>
                 {formError && <div className="form-error" role="alert"><AlertCircle size={15} />{formError}</div>}
                 <footer className="admin-modal-actions"><button className="modal-cancel" type="button" onClick={() => setModal(null)}>Batal</button><button className="modal-save" type="submit" disabled={saving || !contents.length}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}{saving ? "Menyimpan..." : "Simpan episode"}</button></footer>

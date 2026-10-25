@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
-    console.error("Gagal mengunggah gambar katalog.", uploadError);
+    console.error("Gagal mengunggah gambar donghua.", uploadError);
     return Response.json({ error: "Gambar tidak dapat diunggah ke Supabase Storage." }, { status: 500 });
   }
 
@@ -142,7 +142,7 @@ export async function DELETE(request: Request) {
       .range(from, from + pageSize - 1);
 
     if (queryError) {
-      console.error("Gagal memeriksa referensi gambar katalog.", queryError);
+      console.error("Gagal memeriksa referensi gambar donghua.", queryError);
       return Response.json({ error: "Penggunaan gambar lama tidak dapat diverifikasi." }, { status: 500 });
     }
 
@@ -163,7 +163,7 @@ export async function DELETE(request: Request) {
 
   const { error } = await session.supabase.storage.from(bucketName).remove(unusedPaths);
   if (error) {
-    console.error("Gagal menghapus gambar lama dari katalog.", error);
+    console.error("Gagal menghapus gambar lama dari donghua.", error);
     return Response.json({ error: "Gambar lama tidak dapat dihapus dari Supabase Storage." }, { status: 500 });
   }
 

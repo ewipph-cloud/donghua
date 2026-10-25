@@ -49,7 +49,7 @@ export default function Home() {
   const [catalogTitles, setCatalogTitles] = useState<Series[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(() => isSupabaseConfigured());
   const [catalogError, setCatalogError] = useState(() =>
-    isSupabaseConfigured() ? "" : "Katalog database belum dikonfigurasi.",
+    isSupabaseConfigured() ? "" : "Database belum dikonfigurasi.",
   );
 
   useEffect(() => {
@@ -96,17 +96,17 @@ export default function Home() {
           const message =
             payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
               ? payload.error
-              : "Katalog database tidak dapat dimuat.";
+              : "Daftar donghua tidak dapat dimuat.";
           throw new Error(message);
         }
         const parsed = publicSeriesSchema.array().safeParse(payload);
-        if (!parsed.success) throw new Error("Format katalog dari database tidak sesuai.");
+        if (!parsed.success) throw new Error("Format daftar donghua dari database tidak sesuai.");
         if (active) {
           setCatalogTitles(parsed.data);
         }
       } catch (error) {
         if (active) {
-          setCatalogError(error instanceof Error ? error.message : "Katalog tidak dapat dimuat.");
+          setCatalogError(error instanceof Error ? error.message : "Daftar donghua tidak dapat dimuat.");
         }
       } finally {
         if (active) setCatalogLoading(false);
@@ -306,8 +306,8 @@ export default function Home() {
         <section className="hero hero-empty" id="beranda">
           <div className="page-width hero-empty-content">
             <Film size={27} />
-            <h1>{catalogLoading ? "Memuat katalog..." : catalogError ? "Katalog tidak tersedia." : "Belum ada konten diterbitkan."}</h1>
-            <p>{catalogLoading || catalogError ? "Konten akan tampil setelah katalog berhasil dimuat." : "Judul yang diterbitkan dari dashboard admin akan tampil di sini."}</p>
+            <h1>{catalogLoading ? "Memuat daftar donghua..." : catalogError ? "Daftar donghua tidak tersedia." : "Belum ada konten diterbitkan."}</h1>
+            <p>{catalogLoading || catalogError ? "Konten akan tampil setelah daftar donghua berhasil dimuat." : "Judul yang diterbitkan dari dashboard admin akan tampil di sini."}</p>
           </div>
         </section>
       )}
@@ -363,7 +363,7 @@ export default function Home() {
           ) : null}
 
           {catalogLoading ? (
-            <div className="catalog-loading" role="status">Memuat katalog...</div>
+            <div className="catalog-loading" role="status">Memuat daftar donghua...</div>
           ) : filteredSeries.length > 0 && activeStatus !== "Disimpan" ? (
             <div className="series-grid">
               {filteredSeries.map((item, index) => (
@@ -472,9 +472,9 @@ export default function Home() {
 
       <footer className="footer page-width">
         <a className="footer-brand" href="#beranda"><span className="brand-mark"><Sparkles size={16} /></span><strong>DONGHUA<span>ID</span></strong></a>
-        <p>Katalog donghua pilihan untuk menemani waktu luangmu.</p>
+        <p>Donghua pilihan untuk menemani waktu luangmu.</p>
         <span className="footer-copyright">© 2026 Donghua ID</span>
-        <p className="footer-disclaimer">Situs demo katalog. Tidak menyimpan atau menghosting berkas video.</p>
+        <p className="footer-disclaimer">Situs ini tidak menyimpan atau menghosting berkas video.</p>
       </footer>
 
       {selectedSeries && (
@@ -498,7 +498,7 @@ export default function Home() {
                   {savedIds.includes(selectedSeries.id) ? <Check size={16} /> : <Bookmark size={16} />}
                   {savedIds.includes(selectedSeries.id) ? "Tersimpan di koleksi" : "Simpan ke koleksi"}
                 </button>
-                <button className="button button-glass" type="button" onClick={() => setSelectedSeries(null)}>Kembali ke katalog</button>
+                <button className="button button-glass" type="button" onClick={() => setSelectedSeries(null)}>Kembali ke daftar donghua</button>
               </div>
             </div>
           </section>

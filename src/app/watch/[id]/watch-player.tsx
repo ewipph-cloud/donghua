@@ -364,9 +364,9 @@ export function WatchPlayer({
                 <h2>{title.title}<span>Episode {selectedEpisode}</span></h2>
                 <p>{title.summary}</p>
               </div>
-              <Link className="watch-detail-link" href="/#rilisan">Lihat katalog <ChevronRight size={14} /></Link>
+              <Link className="watch-detail-link" href="/#rilisan">Lihat daftar donghua <ChevronRight size={14} /></Link>
             </div>
-            <div className={`watch-note${databaseWarning ? " watch-note-warning" : ""}`}><span><Check size={14} /></span><p><strong>{databaseWarning ? "Katalog belum tersambung" : selectedServer ? "Sumber video tersedia" : "Menunggu sumber video"}</strong><small>{databaseWarning || (selectedServer ? `Stream aktif melalui server ${selectedServer.name}.` : "Tambahkan URL server di panel admin untuk mulai menonton.")}</small></p></div>
+            <div className={`watch-note${databaseWarning ? " watch-note-warning" : ""}`}><span><Check size={14} /></span><p><strong>{databaseWarning ? "Data belum tersambung" : selectedServer ? "Sumber video tersedia" : "Menunggu sumber video"}</strong><small>{databaseWarning || (selectedServer ? `Stream aktif melalui server ${selectedServer.name}.` : "Tambahkan URL server di panel admin untuk mulai menonton.")}</small></p></div>
           </section>
 
           <aside className="watch-episodes">

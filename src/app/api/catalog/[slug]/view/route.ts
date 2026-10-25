@@ -14,7 +14,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   if (!isSupabaseConfigured()) {
-    return Response.json({ error: "Katalog database belum dikonfigurasi." }, { status: 503 });
+    return Response.json({ error: "Database belum dikonfigurasi." }, { status: 503 });
   }
 
   const { slug } = await params;

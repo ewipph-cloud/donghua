@@ -10,7 +10,7 @@ const genreColors: Record<string, string> = {
 
 export async function GET() {
   if (!isSupabaseConfigured()) {
-    return Response.json({ error: "Katalog database belum dikonfigurasi." }, { status: 503 });
+    return Response.json({ error: "Database belum dikonfigurasi." }, { status: 503 });
   }
 
   const supabase = await createSupabaseServerClient();
@@ -22,7 +22,7 @@ export async function GET() {
     .order("updated_at", { ascending: false });
 
   if (error) {
-    return databaseErrorResponse(error, "Katalog tidak dapat dimuat.");
+    return databaseErrorResponse(error, "Daftar donghua tidak dapat dimuat.");
   }
 
   const catalog = data.map((item) => ({
