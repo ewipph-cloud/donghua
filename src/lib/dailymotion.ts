@@ -26,11 +26,9 @@ export function getDailymotionEmbedUrl(value: string | null | undefined) {
   const videoId = getDailymotionVideoId(value);
   if (!/^[a-zA-Z0-9]{3,30}$/.test(videoId)) return null;
 
-  const url = new URL("https://player.nunadrama.sbs/index.php");
-  url.searchParams.set("video", videoId);
-  url.searchParams.set("autoplay", "1");
-  url.searchParams.set("mute", "1");
-  return url.toString();
+  const playerUrl = new URL("https://geo.dailymotion.com/player/xi5h2.html");
+  playerUrl.searchParams.set("video", videoId);
+  return playerUrl.toString();
 }
 
 export function isDailymotionCdnUrl(value: string) {

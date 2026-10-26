@@ -148,6 +148,7 @@ export function AdminDashboard() {
   const [formContent, setFormContent] = useState<ContentInput>(emptyContent);
   const [formEpisode, setFormEpisode] = useState<EpisodeInput>(emptyEpisode);
   const [saving, setSaving] = useState(false);
+  const [resolvingDailymotion, setResolvingDailymotion] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(0);
   const [formError, setFormError] = useState("");
 
@@ -305,6 +306,43 @@ export function AdminDashboard() {
       setFormError(error instanceof Error ? error.message : "Episode gagal disimpan.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function resolveDailymotionSource(target: "content" | "episode") {
+    const sourceUrl =
+      target === "content"
+        ? formContent.stream_url_dailymotion
+        : formEpisode.stream_url_dailymotion;
+    if (!sourceUrl?.trim()) {
+      setFormError("Tempel tautan episode ca3d.site terlebih dahulu.");
+      return;
+    }
+
+    setResolvingDailymotion(true);
+    setFormError("");
+    try {
+      const payload = await sendJson("/api/admin/dailymotion/resolve", "POST", {
+        url: sourceUrl.trim(),
+      });
+      if (
+        !payload ||
+        typeof payload !== "object" ||
+        !("videoId" in payload) ||
+        typeof payload.videoId !== "string"
+      ) {
+        throw new Error("ID Dailymotion tidak ditemukan.");
+      }
+      const videoId = payload.videoId;
+      if (target === "content") {
+        setFormContent((form) => ({ ...form, stream_url_dailymotion: videoId }));
+      } else {
+        setFormEpisode((form) => ({ ...form, stream_url_dailymotion: videoId }));
+      }
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "ID Dailymotion gagal dideteksi.");
+    } finally {
+      setResolvingDailymotion(false);
     }
   }
 
@@ -524,7 +562,10 @@ export function AdminDashboard() {
                   />
                   <label className="form-full">URL server lain (opsional)<input type="url" value={formContent.stream_url ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                   <label className="form-full">ID video OK.Ru<input type="text" inputMode="numeric" maxLength={2048} value={formContent.stream_url_okru ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="17698476395169" /><small>Masukkan ID berupa angka. URL embed OK.Ru juga bisa ditempel.</small></label>
-                  <label className="form-full">ID video Dailymotion<input type="text" value={formContent.stream_url_dailymotion ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="xbpo0b2" /><small>Masukkan ID saja; pemutar perantara akan membentuk tautan otomatis.</small></label>
+                  <div className="form-full dailymotion-resolver">
+                    <label>ID video Dailymotion atau tautan ca3d.site<input type="text" maxLength={2048} value={formContent.stream_url_dailymotion ?? ""} onChange={(event) => setFormContent((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="ID Dailymotion atau https://ca3d.site/watch/..." /><small>ID Dailymotion langsung diputar dengan embed resmi.</small></label>
+                    <button className="resolve-dailymotion-button" type="button" disabled={resolvingDailymotion} onClick={() => void resolveDailymotionSource("content")}>{resolvingDailymotion ? "Mendeteksi ID..." : "Deteksi ID dari tautan ca3d.site"}</button>
+                  </div>
                 </div>
                 <div className="form-switches">
                   <label><input type="checkbox" checked={formContent.featured} onChange={(event) => setFormContent((form) => ({ ...form, featured: event.target.checked }))} /><span><strong>Pilihan utama</strong><small>Tampilkan sebagai rekomendasi unggulan</small></span></label>
@@ -558,7 +599,10 @@ export function AdminDashboard() {
                   <label>Judul episode<input value={formEpisode.title} onChange={(event) => setFormEpisode((form) => ({ ...form, title: event.target.value }))} placeholder="Pertemuan baru" /></label>
                   <label className="form-full">URL server lain (opsional)<input type="url" value={formEpisode.stream_url ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url: event.target.value }))} placeholder="https://.../video.mp4 atau URL embed" /></label>
                   <label className="form-full">ID video OK.Ru<input type="text" inputMode="numeric" maxLength={2048} value={formEpisode.stream_url_okru ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_okru: event.target.value }))} placeholder="17698476395169" /><small>Masukkan ID berupa angka. URL embed OK.Ru juga bisa ditempel.</small></label>
-                  <label className="form-full">ID video Dailymotion<input type="text" value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="xbpo0b2" /><small>Masukkan ID saja; pemutar perantara akan membentuk tautan otomatis.</small></label>
+                  <div className="form-full dailymotion-resolver">
+                    <label>ID video Dailymotion atau tautan ca3d.site<input type="text" maxLength={2048} value={formEpisode.stream_url_dailymotion ?? ""} onChange={(event) => setFormEpisode((form) => ({ ...form, stream_url_dailymotion: event.target.value }))} placeholder="ID Dailymotion atau https://ca3d.site/watch/..." /><small>ID Dailymotion langsung diputar dengan embed resmi.</small></label>
+                    <button className="resolve-dailymotion-button" type="button" disabled={resolvingDailymotion} onClick={() => void resolveDailymotionSource("episode")}>{resolvingDailymotion ? "Mendeteksi ID..." : "Deteksi ID dari tautan ca3d.site"}</button>
+                  </div>
                 </div>
                 <div className="form-switches"><label><input type="checkbox" checked={formEpisode.published} onChange={(event) => setFormEpisode((form) => ({ ...form, published: event.target.checked }))} /><span><strong>Terbitkan episode</strong><small>Episode ditampilkan kepada pengunjung</small></span></label></div>
                 <div className="episode-form-note"><AlertCircle size={14} /> Masukkan ID video saja, tanpa URL.</div>

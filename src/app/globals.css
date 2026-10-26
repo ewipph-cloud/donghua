@@ -2863,6 +2863,27 @@ button {
   color: #626b76;
 }
 
+.dailymotion-resolver {
+  display: grid;
+  gap: 6px;
+}
+
+.resolve-dailymotion-button {
+  justify-self: start;
+  padding: 6px 9px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 6px;
+  background: #171a20;
+  color: #c5f28f;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.resolve-dailymotion-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .image-upload-field {
   display: grid;
   gap: 6px;
