@@ -32,6 +32,8 @@ function parseEpisodeNumber(value: string | string[] | undefined) {
 }
 
 export async function generateMetadata({ params, searchParams }: WatchPageProps): Promise<Metadata> {
+  await connection();
+
   const [{ id }, query] = await Promise.all([params, searchParams]);
   let selected = series.find((item) => item.id === id);
 
