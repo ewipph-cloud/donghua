@@ -26,7 +26,7 @@ export function getDailymotionEmbedUrl(value: string | null | undefined) {
   const videoId = getDailymotionVideoId(value);
   if (!/^[a-zA-Z0-9]{3,30}$/.test(videoId)) return null;
 
-  const playerUrl = new URL("https://geo.dailymotion.com/player/xi5h2.html");
+  const playerUrl = new URL("https://geo.dailymotion.com/player/xtv3w.html");
   playerUrl.searchParams.set("video", videoId);
   return playerUrl.toString();
 }
