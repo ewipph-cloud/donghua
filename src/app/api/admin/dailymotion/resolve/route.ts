@@ -1,9 +1,10 @@
-import { getDailymotionVideoId } from "@/lib/dailymotion";
 import { getAdminSession } from "@/lib/supabase/admin";
 
 const MAX_PAGE_SIZE = 1024 * 1024;
-const DAILYMOTION_PLAYER_URL =
-  /https?:\/\/geo\.dailymotion\.com\/player\/[^"'<>\s]+/i;
+const PLAYER_URL =
+  /https?:\/\/(?:geo\.dailymotion\.com\/player\/[^"'<>\s]+|player\.nunadrama\.sbs\/index\.php\?[^"'<>\s]+)/gi;
+const BASE64_VALUE = /\bvalue=["']([a-z\d+/]{80,4096}={0,2})["']/gi;
+const VIDEO_ID = /^[a-z\d]{3,30}$/i;
 
 async function readLimitedText(response: Response) {
   const reader = response.body?.getReader();
@@ -36,6 +37,31 @@ async function readLimitedText(response: Response) {
   return new TextDecoder().decode(body);
 }
 
+function findDailymotionVideoId(html: string) {
+  const markups = [html];
+  let decodedValues = 0;
+
+  for (const match of html.matchAll(BASE64_VALUE)) {
+    if (decodedValues >= 40) break;
+    decodedValues++;
+    markups.push(Buffer.from(match[1], "base64").toString("utf8"));
+  }
+
+  for (const markup of markups) {
+    for (const match of markup.matchAll(PLAYER_URL)) {
+      try {
+        const playerUrl = new URL(match[0].replaceAll("&amp;", "&"));
+        const videoId = playerUrl.searchParams.get("video") ?? "";
+        if (VIDEO_ID.test(videoId)) return videoId;
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return "";
+}
+
 export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session) return Response.json({ error: "Akses admin diperlukan." }, { status: 401 });
@@ -64,16 +90,22 @@ export async function POST(request: Request) {
     return Response.json({ error: "URL halaman sumber tidak valid." }, { status: 400 });
   }
 
+  const hostname = sourceUrl.hostname.replace(/^www\./, "");
+  const isCa3dEpisode =
+    hostname === "ca3d.site" && /^\/watch\/\d+\/\d+\/?$/.test(sourceUrl.pathname);
+  const isAnichinEpisode =
+    (hostname === "anichin.moe" || hostname === "anichin.care") &&
+    /^\/[a-z0-9-]+\/?$/i.test(sourceUrl.pathname);
+
   if (
     sourceUrl.protocol !== "https:" ||
-    sourceUrl.hostname !== "ca3d.site" ||
+    (!isCa3dEpisode && !isAnichinEpisode) ||
     sourceUrl.port ||
     sourceUrl.username ||
-    sourceUrl.password ||
-    !/^\/watch\/\d+\/\d+\/?$/.test(sourceUrl.pathname)
+    sourceUrl.password
   ) {
     return Response.json(
-      { error: "Gunakan tautan episode ca3d.site dengan format /watch/ID/episode." },
+      { error: "Gunakan tautan episode ca3d.site atau Anichin yang valid." },
       { status: 400 },
     );
   }
@@ -87,12 +119,12 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(8000),
     });
   } catch {
-    return Response.json({ error: "Halaman ca3d.site tidak dapat diakses." }, { status: 502 });
+    return Response.json({ error: "Halaman sumber tidak dapat diakses." }, { status: 502 });
   }
 
   if (!response.ok || response.status >= 300) {
     return Response.json(
-      { error: `Halaman ca3d.site gagal dimuat (${response.status}).` },
+      { error: `Halaman sumber gagal dimuat (${response.status}).` },
       { status: 502 },
     );
   }
@@ -112,8 +144,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const playerUrl = html.match(DAILYMOTION_PLAYER_URL)?.[0]?.replaceAll("&amp;", "&");
-  const videoId = playerUrl ? getDailymotionVideoId(playerUrl) : "";
+  const videoId = findDailymotionVideoId(html);
   if (!videoId) {
     return Response.json(
       { error: "ID Dailymotion tidak ditemukan pada halaman tersebut." },
