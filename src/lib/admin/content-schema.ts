@@ -81,6 +81,7 @@ export const contentSchema = z.object({
     .max(140)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Gunakan huruf kecil, angka, dan tanda hubung."),
   synopsis: z.string().trim().max(1200).default(""),
+  content_type: z.enum(["donghua", "anime"]).default("donghua"),
   genre: z.string().trim().min(2).max(40),
   status: z.enum(["ongoing", "completed", "upcoming"]),
   year: z.number().int().min(1950).max(2100),

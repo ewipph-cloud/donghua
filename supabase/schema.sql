@@ -80,6 +80,8 @@ create table if not exists public.anime_content (
   title text not null,
   slug text not null unique,
   synopsis text not null default '',
+  content_type text not null default 'donghua'
+    constraint anime_content_content_type_check check (content_type in ('donghua', 'anime')),
   genre text not null,
   status text not null default 'ongoing'
     check (status in ('ongoing', 'completed', 'upcoming')),
@@ -100,9 +102,25 @@ create table if not exists public.anime_content (
 );
 
 alter table public.anime_content
+  add column if not exists content_type text not null default 'donghua',
   add column if not exists stream_url_okru text,
   add column if not exists stream_url_dailymotion text,
   add column if not exists stream_url_dailymotion_audio text;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'anime_content_content_type_check'
+      and conrelid = 'public.anime_content'::regclass
+  ) then
+    alter table public.anime_content
+      add constraint anime_content_content_type_check
+      check (content_type in ('donghua', 'anime'));
+  end if;
+end;
+$$;
 
 create index if not exists anime_content_published_updated_idx
   on public.anime_content (published, updated_at desc);

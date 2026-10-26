@@ -39,6 +39,7 @@ const emptyContent: ContentInput = {
   title: "",
   slug: "",
   synopsis: "",
+  content_type: "donghua",
   genre: "Fantasi",
   status: "ongoing",
   year: new Date().getFullYear(),
@@ -72,6 +73,7 @@ const validationFieldLabels: Record<string, string> = {
   title: "Judul",
   slug: "Slug URL",
   synopsis: "Sinopsis",
+  content_type: "Jenis konten",
   genre: "Genre",
   status: "Status",
   year: "Tahun rilis",
@@ -200,6 +202,7 @@ export function AdminDashboard() {
       title: record.title,
       slug: record.slug,
       synopsis: record.synopsis,
+      content_type: record.content_type,
       genre: record.genre,
       status: record.status,
       year: record.year,
@@ -386,6 +389,7 @@ export function AdminDashboard() {
         title: content.title,
         slug: content.slug,
         synopsis: content.synopsis,
+        content_type: content.content_type,
         genre: content.genre,
         status: content.status,
         year: content.year,
@@ -413,7 +417,7 @@ export function AdminDashboard() {
         <div>
           <div className="dashboard-eyebrow"><span /> CONTENT STUDIO</div>
           <h1>Ringkasan <span>dashboard</span></h1>
-          <p>Kelola daftar donghua dan episode dari satu tempat.</p>
+          <p>Kelola katalog anime, donghua, dan episodenya dari satu tempat.</p>
         </div>
         <button className="dashboard-add-button" type="button" onClick={() => openContentModal(null)}>
           <Plus size={17} /> Tambah konten
@@ -453,7 +457,7 @@ export function AdminDashboard() {
       <section className="admin-panel" id="konten">
         <div className="admin-panel-heading">
           <div>
-            <div className="panel-overline">DONGHUA & PUBLIKASI</div>
+            <div className="panel-overline">ANIME & DONGHUA</div>
             <h2>Manajemen konten</h2>
             <p>Tambah judul, perbarui metadata, dan atur status publikasi.</p>
           </div>
@@ -465,13 +469,14 @@ export function AdminDashboard() {
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
-            <thead><tr><th>JUDUL</th><th>STATUS</th><th>GENRE</th><th>EPISODE TERBARU</th><th>VIEWS</th><th>ACTIONS</th></tr></thead>
+            <thead><tr><th>JUDUL</th><th>JENIS</th><th>STATUS</th><th>GENRE</th><th>EPISODE TERBARU</th><th>VIEWS</th><th>ACTIONS</th></tr></thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="table-loading"><LoaderCircle size={18} /> Memuat konten...</td></tr>
+                <tr><td colSpan={7} className="table-loading"><LoaderCircle size={18} /> Memuat konten...</td></tr>
               ) : filteredContents.length ? filteredContents.map((content) => (
                 <tr key={content.id}>
                   <td><div className="content-cell"><span className="content-poster"><Film size={16} /></span><span><strong>{content.title}</strong><small>/{content.slug}{content.featured && <i> · PILIHAN</i>}</small></span></div></td>
+                  <td><span className="table-genre">{content.content_type === "anime" ? "Anime" : "Donghua"}</span></td>
                   <td><span className={`publish-status ${content.published ? "status-published" : "status-draft"}`}><i />{content.published ? "Terbit" : "Draft"}</span></td>
                   <td><span className="table-genre">{content.genre}</span></td>
                   <td className="table-episode">{content.latest_episode || "—"}</td>
@@ -483,7 +488,7 @@ export function AdminDashboard() {
                   </div></td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} className="table-empty">{search ? "Tidak ada hasil yang cocok." : "Belum ada konten. Tambahkan judul pertamamu."}</td></tr>
+                <tr><td colSpan={7} className="table-empty">{search ? "Tidak ada hasil yang cocok." : "Belum ada konten. Tambahkan judul pertamamu."}</td></tr>
               )}
             </tbody>
           </table>
@@ -502,7 +507,7 @@ export function AdminDashboard() {
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
-            <thead><tr><th>JUDUL DONGHUA</th><th>EPISODE</th><th>SUMBER STREAM</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <thead><tr><th>JUDUL ANIME / DONGHUA</th><th>EPISODE</th><th>SUMBER STREAM</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
             <tbody>
               {loading ? (
                 <tr><td colSpan={5} className="table-loading"><LoaderCircle size={18} /> Memuat episode...</td></tr>
@@ -536,7 +541,8 @@ export function AdminDashboard() {
             {modal.type === "content" ? (
               <form className="admin-form" onSubmit={saveContent}>
                 <div className="form-grid">
-                  <label className="form-full">Judul konten<input required minLength={2} maxLength={120} value={formContent.title} onChange={(event) => setFormContent((form) => ({ ...form, title: event.target.value, slug: modal.record ? form.slug : slugify(event.target.value) }))} placeholder="Contoh: Renegade Immortal" /></label>
+                  <label className="form-full">Judul konten<input required minLength={2} maxLength={120} value={formContent.title} onChange={(event) => setFormContent((form) => ({ ...form, title: event.target.value, slug: modal.record ? form.slug : slugify(event.target.value) }))} placeholder="Contoh: Renegade Immortal atau One Piece" /></label>
+                  <label>Jenis konten<select value={formContent.content_type} onChange={(event) => setFormContent((form) => ({ ...form, content_type: event.target.value as ContentInput["content_type"] }))}><option value="donghua">Donghua (Tiongkok)</option><option value="anime">Anime (Jepang)</option></select></label>
                   <label>Slug URL<input required value={formContent.slug} onChange={(event) => setFormContent((form) => ({ ...form, slug: event.target.value }))} placeholder="renegade-immortal" /></label>
                   <label>Genre<input required value={formContent.genre} onChange={(event) => setFormContent((form) => ({ ...form, genre: event.target.value }))} placeholder="Fantasi" /></label>
                   <label>Status<select value={formContent.status} onChange={(event) => setFormContent((form) => ({ ...form, status: event.target.value as ContentInput["status"] }))}><option value="ongoing">Sedang tayang</option><option value="completed">Tamat</option><option value="upcoming">Segera hadir</option></select></label>
@@ -577,7 +583,7 @@ export function AdminDashboard() {
             ) : (
               <form className="admin-form" onSubmit={saveEpisode}>
                 <div className="form-grid">
-                  <label className="form-full">Judul donghua<select required value={formEpisode.content_id} onChange={(event) => setFormEpisode((form) => {
+                  <label className="form-full">Judul anime / donghua<select required value={formEpisode.content_id} onChange={(event) => setFormEpisode((form) => {
                     const contentId = event.target.value;
                     const latestEpisode = latestEpisodeNumber(
                       contents.find((content) => content.id === contentId)?.latest_episode ?? "",

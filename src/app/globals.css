@@ -692,6 +692,37 @@ button {
   color: var(--muted);
 }
 
+.media-type-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+
+.media-type-tabs button {
+  min-height: 32px;
+  padding: 0 16px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.media-type-tabs button:hover {
+  color: var(--text);
+}
+
+.media-type-tabs button.media-type-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
 .catalog-toolbar {
   display: flex;
   min-height: 44px;

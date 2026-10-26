@@ -3,6 +3,7 @@ import { z } from "zod";
 export type Series = {
   id: string;
   title: string;
+  contentType?: "donghua" | "anime";
   episode: string;
   genre: string;
   rating: string;
@@ -19,6 +20,7 @@ export type Series = {
 export const publicSeriesSchema = z.object({
   id: z.string(),
   title: z.string(),
+  contentType: z.enum(["donghua", "anime"]),
   episode: z.string(),
   genre: z.string(),
   rating: z.string(),

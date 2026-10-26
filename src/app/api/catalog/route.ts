@@ -16,18 +16,19 @@ export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("anime_content")
-    .select("slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,synopsis,featured")
+    .select("slug,title,content_type,latest_episode,genre,rating,views,status,poster_url,banner_url,synopsis,featured")
     .eq("published", true)
     .order("featured", { ascending: false })
     .order("updated_at", { ascending: false });
 
   if (error) {
-    return databaseErrorResponse(error, "Daftar donghua tidak dapat dimuat.");
+    return databaseErrorResponse(error, "Katalog anime dan donghua tidak dapat dimuat.");
   }
 
   const catalog = data.map((item) => ({
     id: item.slug,
     title: item.title,
+    contentType: item.content_type,
     episode: item.latest_episode,
     genre: item.genre,
     rating: String(item.rating),

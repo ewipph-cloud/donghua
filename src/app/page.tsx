@@ -36,6 +36,7 @@ import {
 
 export default function Home() {
   const [activeFeature, setActiveFeature] = useState(0);
+  const [activeMediaType, setActiveMediaType] = useState<"donghua" | "anime">("donghua");
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [activeStatus, setActiveStatus] = useState("Semua");
   const [query, setQuery] = useState("");
@@ -96,17 +97,17 @@ export default function Home() {
           const message =
             payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
               ? payload.error
-              : "Daftar donghua tidak dapat dimuat.";
+              : "Katalog anime dan donghua tidak dapat dimuat.";
           throw new Error(message);
         }
         const parsed = publicSeriesSchema.array().safeParse(payload);
-        if (!parsed.success) throw new Error("Format daftar donghua dari database tidak sesuai.");
+        if (!parsed.success) throw new Error("Format katalog anime dan donghua dari database tidak sesuai.");
         if (active) {
           setCatalogTitles(parsed.data);
         }
       } catch (error) {
         if (active) {
-          setCatalogError(error instanceof Error ? error.message : "Daftar donghua tidak dapat dimuat.");
+          setCatalogError(error instanceof Error ? error.message : "Katalog anime dan donghua tidak dapat dimuat.");
         }
       } finally {
         if (active) setCatalogLoading(false);
@@ -118,8 +119,12 @@ export default function Home() {
     };
   }, []);
 
-  const dynamicFeatured = catalogTitles.filter((item) => item.featured).slice(0, 3);
-  const heroTitles = dynamicFeatured.length ? dynamicFeatured : catalogTitles.slice(0, 3);
+  const mediaTitles = useMemo(
+    () => catalogTitles.filter((item) => (item.contentType ?? "donghua") === activeMediaType),
+    [activeMediaType, catalogTitles],
+  );
+  const dynamicFeatured = mediaTitles.filter((item) => item.featured).slice(0, 3);
+  const heroTitles = dynamicFeatured.length ? dynamicFeatured : mediaTitles.slice(0, 3);
   const currentFeature = heroTitles.length ? heroTitles[activeFeature % heroTitles.length] : null;
 
   useEffect(() => {
@@ -139,12 +144,12 @@ export default function Home() {
     return () => window.clearInterval(timer);
   }, [heroTitles.length]);
 
-  const popularTitles = [...catalogTitles]
+  const popularTitles = [...mediaTitles]
     .sort((left, right) => (right.viewCount ?? 0) - (left.viewCount ?? 0))
     .slice(0, 5);
   const filteredSeries = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("id");
-    return catalogTitles.filter((item) => {
+    return mediaTitles.filter((item) => {
       const matchesQuery =
         normalizedQuery.length === 0 ||
         `${item.title} ${item.genre}`.toLocaleLowerCase("id").includes(normalizedQuery);
@@ -152,7 +157,16 @@ export default function Home() {
       const matchesStatus = activeStatus === "Semua" || item.status === activeStatus;
       return matchesQuery && matchesCategory && matchesStatus;
     });
-  }, [activeCategory, activeStatus, catalogTitles, query]);
+  }, [activeCategory, activeStatus, mediaTitles, query]);
+
+  const mediaTypeLabel = activeMediaType === "anime" ? "anime" : "donghua";
+
+  function selectMediaType(mediaType: "donghua" | "anime") {
+    setActiveMediaType(mediaType);
+    setActiveFeature(0);
+    setActiveCategory("Semua");
+    if (activeStatus !== "Disimpan") setActiveStatus("Semua");
+  }
 
   function toggleSaved(id: string) {
     setSavedIds((current) =>
@@ -168,17 +182,18 @@ export default function Home() {
     <main className={`site-shell${lightTheme ? " theme-light" : ""}`}>
       <header className="topbar">
         <div className="topbar-inner">
-          <a className="brand" href="#beranda" aria-label="Donghua ID beranda">
+          <a className="brand" href="#beranda" aria-label="Anime dan Donghua ID beranda">
             <span className="brand-mark"><Sparkles size={19} strokeWidth={2.4} /></span>
             <span className="brand-copy">
-              <strong>DONGHUA<span>ID</span></strong>
-              <small>Jelajahi dunia lain</small>
+              <strong>ANIME<span>ID</span></strong>
+              <small>Anime &amp; Donghua</small>
             </span>
           </a>
 
           <nav className={`main-nav${menuOpen ? " nav-open" : ""}`} aria-label="Navigasi utama">
             <a className="nav-active" href="#beranda" onClick={() => setMenuOpen(false)}>Beranda</a>
-            <a href="#rilisan" onClick={() => setMenuOpen(false)}>Jelajahi</a>
+            <a href="#rilisan" onClick={() => { selectMediaType("donghua"); setMenuOpen(false); }}>Donghua</a>
+            <a href="#rilisan" onClick={() => { selectMediaType("anime"); setMenuOpen(false); }}>Anime</a>
             <a href="#populer" onClick={() => setMenuOpen(false)}>Paling populer</a>
           </nav>
 
@@ -306,8 +321,8 @@ export default function Home() {
         <section className="hero hero-empty" id="beranda">
           <div className="page-width hero-empty-content">
             <Film size={27} />
-            <h1>{catalogLoading ? "Memuat daftar donghua..." : catalogError ? "Daftar donghua tidak tersedia." : "Belum ada konten diterbitkan."}</h1>
-            <p>{catalogLoading || catalogError ? "Konten akan tampil setelah daftar donghua berhasil dimuat." : "Judul yang diterbitkan dari dashboard admin akan tampil di sini."}</p>
+            <h1>{catalogLoading ? `Memuat daftar ${mediaTypeLabel}...` : catalogError ? `Daftar ${mediaTypeLabel} tidak tersedia.` : `Belum ada ${mediaTypeLabel} diterbitkan.`}</h1>
+            <p>{catalogLoading || catalogError ? "Konten akan tampil setelah katalog berhasil dimuat." : "Judul yang diterbitkan dari dashboard admin akan tampil di sini."}</p>
           </div>
         </section>
       )}
@@ -318,7 +333,7 @@ export default function Home() {
           <div className="section-heading">
             <div>
               <div className="section-overline">PILIHAN UNTUKMU</div>
-              <h2>Jelajahi <span>donghua</span></h2>
+              <h2>Jelajahi <span>{mediaTypeLabel}</span></h2>
             </div>
             <button
               className="filter-button"
@@ -332,8 +347,23 @@ export default function Home() {
             </button>
           </div>
 
+          <div className="media-type-tabs" role="tablist" aria-label="Pilih jenis animasi">
+            {(["donghua", "anime"] as const).map((mediaType) => (
+              <button
+                type="button"
+                key={mediaType}
+                role="tab"
+                aria-selected={activeMediaType === mediaType}
+                className={activeMediaType === mediaType ? "media-type-active" : ""}
+                onClick={() => selectMediaType(mediaType)}
+              >
+                {mediaType === "donghua" ? "Donghua" : "Anime"}
+              </button>
+            ))}
+          </div>
+
           <div className="catalog-toolbar">
-            <div className="category-tabs" role="tablist" aria-label="Kategori donghua">
+            <div className="category-tabs" role="tablist" aria-label={`Genre ${mediaTypeLabel}`}>
               {categories.map((category) => (
                 <button
                   type="button"
@@ -363,7 +393,7 @@ export default function Home() {
           ) : null}
 
           {catalogLoading ? (
-            <div className="catalog-loading" role="status">Memuat daftar donghua...</div>
+            <div className="catalog-loading" role="status">Memuat daftar {mediaTypeLabel}...</div>
           ) : filteredSeries.length > 0 && activeStatus !== "Disimpan" ? (
             <div className="series-grid">
               {filteredSeries.map((item, index) => (
@@ -420,7 +450,7 @@ export default function Home() {
           ) : (
             <div className="empty-state">
               <Search size={22} />
-              <strong>Tidak ada judul ditemukan</strong>
+              <strong>{activeStatus === "Disimpan" ? "Belum ada judul tersimpan" : `Belum ada ${mediaTypeLabel} ditemukan`}</strong>
               <span>Coba kata kunci atau kategori yang berbeda.</span>
               <button type="button" onClick={() => { setQuery(""); setActiveCategory("Semua"); setActiveStatus("Semua"); }}>Hapus filter</button>
             </div>
@@ -471,8 +501,8 @@ export default function Home() {
       </div>
 
       <footer className="footer page-width">
-        <a className="footer-brand" href="#beranda"><span className="brand-mark"><Sparkles size={16} /></span><strong>DONGHUA<span>ID</span></strong></a>
-        <p>Donghua pilihan untuk menemani waktu luangmu.</p>
+        <a className="footer-brand" href="#beranda"><span className="brand-mark"><Sparkles size={16} /></span><strong>ANIME<span>ID</span></strong></a>
+        <p>Anime Jepang dan donghua Tiongkok pilihan untuk menemani waktu luangmu.</p>
         <span className="footer-copyright">© 2026 Donghua ID</span>
         <p className="footer-disclaimer">Situs ini tidak menyimpan atau menghosting berkas video.</p>
       </footer>
@@ -486,7 +516,7 @@ export default function Home() {
               <span />
             </div>
             <div className="modal-content">
-              <span className="modal-kicker">DONGHUA PILIHAN · {selectedSeries.genre.toUpperCase()}</span>
+              <span className="modal-kicker">{selectedSeries.contentType === "anime" ? "ANIME PILIHAN" : "DONGHUA PILIHAN"} · {selectedSeries.genre.toUpperCase()}</span>
               <h2 id="detail-title">{selectedSeries.title}</h2>
               <div className="modal-meta"><span className="rating"><Star size={14} fill="currentColor" /> {selectedSeries.rating}</span><span><CirclePlay size={14} /> {selectedSeries.episode}</span><span><Eye size={14} /> {selectedSeries.views} tayangan</span></div>
               <p>{selectedSeries.summary}</p>
@@ -498,7 +528,7 @@ export default function Home() {
                   {savedIds.includes(selectedSeries.id) ? <Check size={16} /> : <Bookmark size={16} />}
                   {savedIds.includes(selectedSeries.id) ? "Tersimpan di koleksi" : "Simpan ke koleksi"}
                 </button>
-                <button className="button button-glass" type="button" onClick={() => setSelectedSeries(null)}>Kembali ke daftar donghua</button>
+                <button className="button button-glass" type="button" onClick={() => setSelectedSeries(null)}>Kembali ke daftar {selectedSeries.contentType === "anime" ? "anime" : "donghua"}</button>
               </div>
             </div>
           </section>
