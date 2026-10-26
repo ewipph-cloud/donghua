@@ -14,9 +14,10 @@ import {
   Share2,
 } from "lucide-react";
 import { imageUrl, type Series } from "@/lib/series";
-import { getDailymotionVideoId, isDailymotionCdnUrl } from "@/lib/dailymotion";
-
-const DAILYMOTION_PLAYER_ID = "x6fkj3q";
+import {
+  getDailymotionEmbedUrl,
+  isDailymotionCdnUrl,
+} from "@/lib/dailymotion";
 
 type WatchEpisode = {
   episodeNumber: number;
@@ -54,11 +55,11 @@ function getEpisodeServers(episode: WatchEpisode | undefined): WatchServer[] {
 }
 
 function getPlaybackSource(streamUrl: string) {
-  const dailymotionVideoId = getDailymotionVideoId(streamUrl);
-  if (dailymotionVideoId) {
+  const dailymotionEmbedUrl = getDailymotionEmbedUrl(streamUrl);
+  if (dailymotionEmbedUrl) {
     return {
       type: "embed" as const,
-      url: `https://geo.dailymotion.com/player/${DAILYMOTION_PLAYER_ID}.html?video=${encodeURIComponent(dailymotionVideoId)}`,
+      url: dailymotionEmbedUrl,
     };
   }
 
