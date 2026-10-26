@@ -324,6 +324,11 @@ export function WatchPlayer({
                   </div>
                 </>
               )}
+              {selectedServer?.id === "dailymotion" && (
+                <div className="video-brand-overlay" role="img" aria-label="Donghua ID">
+                  <strong>DONGHUA<span>ID</span></strong>
+                </div>
+              )}
             </div>
             <div className="video-share-row">
               <button className="video-share-button" type="button" onClick={() => void shareTitle()}>

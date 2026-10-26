@@ -3472,6 +3472,32 @@ button {
   background: #050607;
 }
 
+.video-brand-overlay {
+  position: absolute;
+  z-index: 2;
+  top: 1%;
+  left: 1.2%;
+  display: grid;
+  width: clamp(100px, 13%, 180px);
+  height: clamp(30px, 6%, 54px);
+  place-items: center;
+  border-radius: 4px;
+  background: #050607;
+  pointer-events: none;
+}
+
+.video-brand-overlay strong {
+  color: #f2f4f5;
+  font-family: var(--font-display);
+  font-size: clamp(9px, 1.05vw, 14px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.video-brand-overlay strong span {
+  color: #a4f06d;
+}
+
 .video-frame > video {
   object-fit: contain;
 }
