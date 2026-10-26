@@ -17,14 +17,12 @@ type WatchEpisode = {
   streamUrl: string | null;
   streamUrlOkru: string | null;
   streamUrlDailymotion: string | null;
-  streamUrlDailymotionAudio: string | null;
 };
 
 type WatchServer = {
   id: "other" | "okru" | "dailymotion";
   name: string;
   url: string;
-  audioUrl?: string;
 };
 
 function parseEpisodeNumber(value: string | string[] | undefined) {
@@ -104,7 +102,6 @@ function getServers(
   streamUrl: string | null,
   streamUrlOkru: string | null,
   streamUrlDailymotion: string | null,
-  streamUrlDailymotionAudio: string | null,
 ) {
   const servers: (WatchServer | null)[] = [
     streamUrl ? { id: "other" as const, name: "Server lain", url: streamUrl } : null,
@@ -114,7 +111,6 @@ function getServers(
           id: "dailymotion" as const,
           name: "Dailymotion",
           url: streamUrlDailymotion,
-          audioUrl: streamUrlDailymotionAudio ?? undefined,
         }
       : null,
   ];
@@ -144,7 +140,7 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("anime_content")
-      .select("id,slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,stream_url,stream_url_okru,stream_url_dailymotion,stream_url_dailymotion_audio,synopsis")
+      .select("id,slug,title,latest_episode,genre,rating,views,status,poster_url,banner_url,stream_url,stream_url_okru,stream_url_dailymotion,synopsis")
       .eq("slug", id)
       .eq("published", true)
       .maybeSingle();
@@ -162,7 +158,7 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
       trackViews = true;
       const { data: episodeRows, error: episodeError } = await supabase
         .from("anime_episodes")
-        .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion,stream_url_dailymotion_audio")
+        .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion")
         .eq("content_id", data.id)
         .eq("published", true)
         .order("episode_number", { ascending: false })
@@ -194,7 +190,6 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
         data.stream_url,
         data.stream_url_okru,
         data.stream_url_dailymotion,
-        data.stream_url_dailymotion_audio,
       );
       availableEpisodes = (episodeRows ?? [])
         .map((episode) => ({
@@ -202,7 +197,6 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
           streamUrl: episode.stream_url,
           streamUrlOkru: episode.stream_url_okru,
           streamUrlDailymotion: episode.stream_url_dailymotion,
-          streamUrlDailymotionAudio: episode.stream_url_dailymotion_audio,
         }))
         .reverse();
     } else if (!databaseWarning) {
@@ -224,7 +218,6 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
         streamUrl: null,
         streamUrlOkru: null,
         streamUrlDailymotion: null,
-        streamUrlDailymotionAudio: null,
       });
     }
     episodes.sort((left, right) => left.episodeNumber - right.episodeNumber);
@@ -235,7 +228,6 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
           streamUrl: null,
           streamUrlOkru: null,
           streamUrlDailymotion: null,
-          streamUrlDailymotionAudio: null,
         }]
       : [];
   } else {
@@ -244,7 +236,6 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
       streamUrl: null,
       streamUrlOkru: null,
       streamUrlDailymotion: null,
-      streamUrlDailymotionAudio: null,
     }));
   }
 

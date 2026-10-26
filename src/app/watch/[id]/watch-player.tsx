@@ -14,20 +14,21 @@ import {
   Share2,
 } from "lucide-react";
 import { imageUrl, type Series } from "@/lib/series";
+import { getDailymotionVideoId, isDailymotionCdnUrl } from "@/lib/dailymotion";
+
+const DAILYMOTION_PLAYER_ID = "x6fkj3q";
 
 type WatchEpisode = {
   episodeNumber: number;
   streamUrl: string | null;
   streamUrlOkru: string | null;
   streamUrlDailymotion: string | null;
-  streamUrlDailymotionAudio: string | null;
 };
 
 type WatchServer = {
   id: "other" | "okru" | "dailymotion";
   name: string;
   url: string;
-  audioUrl?: string;
 };
 
 function getEpisodeServers(episode: WatchEpisode | undefined): WatchServer[] {
@@ -45,7 +46,6 @@ function getEpisodeServers(episode: WatchEpisode | undefined): WatchServer[] {
           id: "dailymotion",
           name: "Dailymotion",
           url: episode.streamUrlDailymotion,
-          audioUrl: episode.streamUrlDailymotionAudio ?? undefined,
         }
       : null,
   ];
@@ -54,6 +54,14 @@ function getEpisodeServers(episode: WatchEpisode | undefined): WatchServer[] {
 }
 
 function getPlaybackSource(streamUrl: string) {
+  const dailymotionVideoId = getDailymotionVideoId(streamUrl);
+  if (dailymotionVideoId) {
+    return {
+      type: "embed" as const,
+      url: `https://geo.dailymotion.com/player/${DAILYMOTION_PLAYER_ID}.html?video=${encodeURIComponent(dailymotionVideoId)}`,
+    };
+  }
+
   const url = new URL(streamUrl);
   const hostname = url.hostname.toLowerCase();
   const youtubeId =
@@ -78,18 +86,6 @@ function getPlaybackSource(streamUrl: string) {
     }
   }
 
-  if (hostname === "dai.ly" || hostname === "www.dailymotion.com" || hostname === "dailymotion.com") {
-    const videoId = hostname === "dai.ly"
-      ? url.pathname.split("/").filter(Boolean)[0]
-      : url.pathname.match(/^\/video\/([^/?]+)/)?.[1]?.split("_")[0];
-    if (videoId) {
-      return {
-        type: "embed" as const,
-        url: `https://www.dailymotion.com/embed/video/${encodeURIComponent(videoId)}`,
-      };
-    }
-  }
-
   if (url.pathname.toLowerCase().endsWith(".m3u8")) {
     return { type: "hls" as const, url: streamUrl };
   }
@@ -107,22 +103,17 @@ function getPlaybackSource(streamUrl: string) {
 
 function VideoPlayback({
   streamUrl,
-  audioUrl,
   poster,
   title,
-}: Readonly<{ streamUrl: string; audioUrl?: string; poster: string; title: string }>) {
+}: Readonly<{ streamUrl: string; poster: string; title: string }>) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackError, setPlaybackError] = useState(false);
   const source = getPlaybackSource(streamUrl);
-  const isDailymotionCdn = (() => {
-    const hostname = new URL(streamUrl).hostname.toLowerCase();
-    return hostname === "dmcdn.net" || hostname.endsWith(".dmcdn.net");
-  })();
+  const isDailymotionCdn = isDailymotionCdnUrl(streamUrl);
   const playbackUrl = (() => {
     if (!isDailymotionCdn) return streamUrl;
     const proxyUrl = new URL("/api/video-proxy", window.location.origin);
     proxyUrl.searchParams.set("url", streamUrl);
-    if (audioUrl) proxyUrl.searchParams.set("audio", audioUrl);
     return `${proxyUrl.pathname}${proxyUrl.search}`;
   })();
 
@@ -192,7 +183,7 @@ function VideoPlayback({
         key={source.url}
         src={source.url}
         title={title}
-        allow="autoplay; encrypted-media; picture-in-picture"
+        allow="autoplay; fullscreen; picture-in-picture; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
       />
@@ -313,9 +304,8 @@ export function WatchPlayer({
             <div className="video-frame">
               {selectedServer ? (
                 <VideoPlayback
-                  key={`${selectedEpisode}:${selectedServer.id}:${selectedServer.url}:${selectedServer.audioUrl ?? ""}`}
+                  key={`${selectedEpisode}:${selectedServer.id}:${selectedServer.url}`}
                   streamUrl={selectedServer.url}
-                  audioUrl={selectedServer.audioUrl}
                   poster={poster}
                   title={`${title.title} Episode ${selectedEpisode}`}
                 />

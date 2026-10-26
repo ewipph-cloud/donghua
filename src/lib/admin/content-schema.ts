@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getDailymotionVideoId, isDailymotionCdnUrl } from "@/lib/dailymotion";
 
 const optionalUrl = z
   .string()
@@ -55,6 +56,22 @@ const optionalOkruUrl = z
       .transform((value) => value || null),
   );
 
+const optionalDailymotionVideo = z
+  .string()
+  .nullable()
+  .transform((value) => value ?? "")
+  .pipe(
+    z
+      .string()
+      .trim()
+      .max(2048)
+      .refine(
+        (value) => !value || Boolean(getDailymotionVideoId(value)) || isDailymotionCdnUrl(value),
+        "Masukkan ID video Dailymotion yang valid.",
+      )
+      .transform((value) => getDailymotionVideoId(value) || value || null),
+  );
+
 export const contentSchema = z.object({
   title: z.string().trim().min(2, "Judul minimal 2 karakter.").max(120),
   slug: z
@@ -73,7 +90,7 @@ export const contentSchema = z.object({
   banner_url: optionalImageUrl,
   stream_url: optionalUrl,
   stream_url_okru: optionalOkruUrl.default(null),
-  stream_url_dailymotion: optionalUrl.default(null),
+  stream_url_dailymotion: optionalDailymotionVideo.default(null),
   stream_url_dailymotion_audio: optionalUrl.default(null),
   featured: z.boolean(),
   published: z.boolean(),
@@ -100,7 +117,7 @@ export const episodeSchema = z.object({
   title: z.string().trim().max(120).default(""),
   stream_url: optionalUrl,
   stream_url_okru: optionalOkruUrl.default(null),
-  stream_url_dailymotion: optionalUrl.default(null),
+  stream_url_dailymotion: optionalDailymotionVideo.default(null),
   stream_url_dailymotion_audio: optionalUrl.default(null),
   published: z.boolean(),
 });
