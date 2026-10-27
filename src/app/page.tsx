@@ -439,7 +439,10 @@ export default function Home() {
                         <Bookmark size={16} fill={savedIds.includes(item.id) ? "currentColor" : "none"} />
                       </button>
                     </div>
-                    <div className="card-meta"><span>{formatUpdateDate(item.episodeUpdatedAt)}</span><i /> <span><Eye size={12} /> {item.views}</span></div>
+                    <div className="card-meta">
+                      <span className="card-update-date"><CalendarDays size={10} />{formatUpdateDate(item.episodeUpdatedAt)}</span>
+                      <span className="card-view-count"><Eye size={10} />{item.views}</span>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -464,7 +467,10 @@ export default function Home() {
                       <button type="button" className="card-title" onClick={() => setSelectedSeries(item)}>{item.title}</button>
                       <button type="button" className="card-save card-save-active" aria-label={`Hapus ${item.title} dari koleksi`} onClick={() => toggleSaved(item.id)}><Bookmark size={16} fill="currentColor" /></button>
                     </div>
-                    <div className="card-meta"><span>{formatUpdateDate(item.episodeUpdatedAt)}</span><i /> <span><Eye size={12} /> {item.views}</span></div>
+                    <div className="card-meta">
+                      <span className="card-update-date"><CalendarDays size={10} />{formatUpdateDate(item.episodeUpdatedAt)}</span>
+                      <span className="card-view-count"><Eye size={10} />{item.views}</span>
+                    </div>
                   </div>
                 </article>
               ))}
