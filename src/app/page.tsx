@@ -34,6 +34,11 @@ import {
   X,
 } from "lucide-react";
 
+function formatLatestEpisode(episode: string) {
+  const number = episode.match(/\d+/)?.[0];
+  return number ? `Episode ${number}` : episode;
+}
+
 export default function Home() {
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeMediaType, setActiveMediaType] = useState<"donghua" | "anime">("donghua");
@@ -403,7 +408,7 @@ export default function Home() {
                       <Image src={imageUrl(item.image, 650)} alt="" fill sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 18vw" />
                       <span className="poster-shade" />
                     </div>
-                    <span className="episode-badge"><small>EPISODE TERAKHIR</small><strong>{item.episode}</strong></span>
+                    <span className="episode-badge">{formatLatestEpisode(item.episode)}</span>
                     <span className="poster-rating"><Star size={12} fill="currentColor" /> {item.rating}</span>
                     <span className="poster-play"><Play size={19} fill="currentColor" /></span>
                   </button>
@@ -433,7 +438,7 @@ export default function Home() {
                       <Image src={imageUrl(item.image, 650)} alt="" fill sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 18vw" />
                       <span className="poster-shade" />
                     </div>
-                    <span className="episode-badge"><small>EPISODE TERAKHIR</small><strong>{item.episode}</strong></span>
+                    <span className="episode-badge">{formatLatestEpisode(item.episode)}</span>
                     <span className="poster-rating"><Star size={12} fill="currentColor" /> {item.rating}</span>
                     <span className="poster-play"><Play size={19} fill="currentColor" /></span>
                   </button>
