@@ -23,7 +23,7 @@ export const publicSeriesSchema = z.object({
   title: z.string(),
   contentType: z.enum(["donghua", "anime"]),
   episode: z.string(),
-  episodeUpdatedAt: z.string().datetime().optional(),
+  episodeUpdatedAt: z.string().datetime({ offset: true }).optional(),
   genre: z.string(),
   rating: z.string(),
   views: z.string(),
