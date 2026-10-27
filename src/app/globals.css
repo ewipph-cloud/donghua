@@ -897,6 +897,23 @@ button {
 
 .episode-badge {
   left: 8px;
+  min-height: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 7px;
+}
+
+.episode-badge small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.episode-badge strong {
+  font-size: 9px;
+  line-height: 1.2;
 }
 
 .poster-rating {
@@ -3506,13 +3523,13 @@ button {
 .video-brand-overlay {
   position: absolute;
   z-index: 2;
-  top: 1%;
-  left: 1.2%;
+  top: 0;
+  left: 0;
   display: grid;
-  width: clamp(100px, 13%, 180px);
-  height: clamp(30px, 6%, 54px);
+  width: clamp(180px, 30%, 360px);
+  height: clamp(42px, 9%, 72px);
   place-items: center;
-  border-radius: 4px;
+  border-radius: 0 0 6px;
   background: #050607;
   pointer-events: none;
 }

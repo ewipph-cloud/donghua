@@ -163,8 +163,7 @@ async function WatchPageContent({ params, searchParams }: WatchPageProps) {
         .select("episode_number,stream_url,stream_url_okru,stream_url_dailymotion")
         .eq("content_id", data.id)
         .eq("published", true)
-        .order("episode_number", { ascending: false })
-        .limit(24);
+        .order("episode_number", { ascending: false });
 
       if (episodeError && episodeError.code === "PGRST205") {
         databaseWarning = "Schema database belum diterapkan. Halaman ini memakai metadata demo.";

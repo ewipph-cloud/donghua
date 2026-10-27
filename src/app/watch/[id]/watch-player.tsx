@@ -245,6 +245,9 @@ export function WatchPlayer({
   const availableServers = episodeServers.length ? episodeServers : servers;
   const [selectedServerId, setSelectedServerId] = useState<WatchServer["id"] | null>(null);
   const selectedServer = availableServers.find((server) => server.id === selectedServerId) ?? availableServers[0];
+  const showDailymotionOverlay = Boolean(
+    selectedServer && getDailymotionEmbedUrl(selectedServer.url),
+  );
   const poster = imageUrl(title.bannerImage ?? title.image, 1400);
   const [shareResult, setShareResult] = useState<{ url: string; message: string } | null>(null);
   const shareUrl = `/watch/${encodeURIComponent(title.id)}?episode=${selectedEpisode}`;
@@ -324,7 +327,7 @@ export function WatchPlayer({
                   </div>
                 </>
               )}
-              {selectedServer?.id === "dailymotion" && (
+              {showDailymotionOverlay && (
                 <div className="video-brand-overlay" role="img" aria-label="Donghua ID">
                   <strong>DONGHUA<span>ID</span></strong>
                 </div>
