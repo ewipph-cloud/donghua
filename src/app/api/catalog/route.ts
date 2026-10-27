@@ -16,7 +16,7 @@ export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("anime_content")
-    .select("slug,title,content_type,latest_episode,genre,rating,views,status,poster_url,banner_url,synopsis,featured,anime_episodes(episode_number)")
+    .select("slug,title,content_type,latest_episode,genre,rating,views,status,poster_url,banner_url,synopsis,featured,anime_episodes(episode_number,updated_at)")
     .eq("published", true)
     .eq("anime_episodes.published", true)
     .order("episode_number", { referencedTable: "anime_episodes", ascending: false })
@@ -35,6 +35,7 @@ export async function GET() {
     episode: item.anime_episodes[0]
       ? `EP ${item.anime_episodes[0].episode_number}`
       : item.latest_episode,
+    episodeUpdatedAt: item.anime_episodes[0]?.updated_at,
     genre: item.genre,
     rating: String(item.rating),
     views: `${Number(item.views).toLocaleString("id-ID")} tayangan`,

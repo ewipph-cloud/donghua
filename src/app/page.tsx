@@ -35,9 +35,21 @@ import {
 } from "lucide-react";
 
 function formatLatestEpisode(episode: string, status: Series["status"]) {
-  if (status === "Tamat") return "Tamat";
   const number = episode.match(/\d+/)?.[0];
-  return number ? `Episode ${number}` : episode;
+  const latestEpisode = number ? `Episode ${number}` : episode;
+  return status === "Tamat" ? `${latestEpisode} · Tamat` : latestEpisode;
+}
+
+function formatUpdateDate(value: string | undefined) {
+  if (!value) return "Tanggal belum tersedia";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Tanggal belum tersedia";
+  const formattedDate = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+  return `Diperbarui ${formattedDate}`;
 }
 
 export default function Home() {
@@ -409,7 +421,9 @@ export default function Home() {
                       <Image src={imageUrl(item.image, 650)} alt="" fill sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 18vw" />
                       <span className="poster-shade" />
                     </div>
-                    <span className="episode-badge">{formatLatestEpisode(item.episode, item.status)}</span>
+                    <span className="episode-badge">
+                      <strong>{formatLatestEpisode(item.episode, item.status)}</strong>
+                    </span>
                     <span className="poster-rating"><Star size={12} fill="currentColor" /> {item.rating}</span>
                     <span className="poster-play"><Play size={19} fill="currentColor" /></span>
                   </button>
@@ -425,7 +439,7 @@ export default function Home() {
                         <Bookmark size={16} fill={savedIds.includes(item.id) ? "currentColor" : "none"} />
                       </button>
                     </div>
-                    <div className="card-meta"><span>{item.genre}</span><i /> <span><Eye size={12} /> {item.views}</span></div>
+                    <div className="card-meta"><span>{formatUpdateDate(item.episodeUpdatedAt)}</span><i /> <span><Eye size={12} /> {item.views}</span></div>
                   </div>
                 </article>
               ))}
@@ -439,7 +453,9 @@ export default function Home() {
                       <Image src={imageUrl(item.image, 650)} alt="" fill sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 18vw" />
                       <span className="poster-shade" />
                     </div>
-                    <span className="episode-badge">{formatLatestEpisode(item.episode, item.status)}</span>
+                    <span className="episode-badge">
+                      <strong>{formatLatestEpisode(item.episode, item.status)}</strong>
+                    </span>
                     <span className="poster-rating"><Star size={12} fill="currentColor" /> {item.rating}</span>
                     <span className="poster-play"><Play size={19} fill="currentColor" /></span>
                   </button>
@@ -448,7 +464,7 @@ export default function Home() {
                       <button type="button" className="card-title" onClick={() => setSelectedSeries(item)}>{item.title}</button>
                       <button type="button" className="card-save card-save-active" aria-label={`Hapus ${item.title} dari koleksi`} onClick={() => toggleSaved(item.id)}><Bookmark size={16} fill="currentColor" /></button>
                     </div>
-                    <div className="card-meta"><span>{item.genre}</span><i /> <span><Eye size={12} /> {item.views}</span></div>
+                    <div className="card-meta"><span>{formatUpdateDate(item.episodeUpdatedAt)}</span><i /> <span><Eye size={12} /> {item.views}</span></div>
                   </div>
                 </article>
               ))}
