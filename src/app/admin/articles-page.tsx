@@ -14,6 +14,7 @@ const emptyArticle: ArticleInput = {
   slug: "",
   excerpt: "",
   body: "",
+  published: false,
   content_id: null,
   cover_image_url: null,
 };
@@ -205,10 +206,18 @@ export function AdminArticles() {
               />
             </label>
           </div>
+          <label className="article-publish-toggle">
+            <input
+              type="checkbox"
+              checked={article.published}
+              onChange={(event) => setArticle((current) => ({ ...current, published: event.target.checked }))}
+            />
+            Publikasikan artikel agar tampil di halaman publik
+          </label>
           <footer className="admin-modal-actions">
             <button className="modal-save" type="submit" disabled={saving}>
               {saving ? <LoaderCircle size={15} className="spin" /> : <Plus size={15} />}
-              {saving ? "Menyimpan..." : "Simpan sebagai draft"}
+              {saving ? "Menyimpan..." : article.published ? "Publikasikan artikel" : "Simpan sebagai draft"}
             </button>
           </footer>
         </form>

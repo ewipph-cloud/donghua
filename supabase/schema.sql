@@ -170,6 +170,7 @@ create table if not exists public.articles (
   slug text not null unique,
   excerpt text not null default '',
   body text not null,
+  published boolean not null default false,
   content_id uuid references public.anime_content (id) on delete set null,
   cover_image_url text,
   created_at timestamptz not null default now(),
@@ -177,6 +178,7 @@ create table if not exists public.articles (
 );
 
 alter table public.articles
+  add column if not exists published boolean not null default false,
   add column if not exists content_id uuid references public.anime_content (id) on delete set null,
   add column if not exists cover_image_url text;
 
@@ -211,7 +213,7 @@ revoke all on public.admin_users, public.anime_content, public.anime_episodes, p
 revoke all on public.admin_users, public.anime_content, public.anime_episodes, public.articles from anon, authenticated;
 grant select on public.anime_content, public.anime_episodes to anon, authenticated;
 grant select on public.admin_users to authenticated;
-grant select on public.articles to authenticated;
+grant select on public.articles to anon, authenticated;
 grant insert, update, delete on public.anime_content, public.anime_episodes, public.articles to authenticated;
 grant usage on schema public to anon, authenticated;
 
@@ -268,6 +270,12 @@ create policy "Admins can delete episodes"
   on public.anime_episodes for delete
   to authenticated
   using ((select private.is_admin()));
+
+drop policy if exists "Published articles are visible to everyone" on public.articles;
+create policy "Published articles are visible to everyone"
+  on public.articles for select
+  to anon, authenticated
+  using (published or (select private.is_admin()));
 
 drop policy if exists "Admins can view articles" on public.articles;
 create policy "Admins can view articles"

@@ -210,6 +210,7 @@ export default function Home() {
 
           <nav className={`main-nav${menuOpen ? " nav-open" : ""}`} aria-label="Navigasi utama">
             <a className="nav-active" href="#beranda" onClick={() => setMenuOpen(false)}>Beranda</a>
+            <Link href="/artikel" onClick={() => setMenuOpen(false)}>Artikel</Link>
             <a href="#rilisan" onClick={() => { selectMediaType("donghua"); setMenuOpen(false); }}>Donghua</a>
             <a href="#rilisan" onClick={() => { selectMediaType("anime"); setMenuOpen(false); }}>Anime</a>
             <a href="#populer" onClick={() => setMenuOpen(false)}>Paling populer</a>
