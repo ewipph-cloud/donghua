@@ -10,6 +10,8 @@ export const articleSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Gunakan huruf kecil, angka, dan tanda hubung."),
   excerpt: z.string().trim().max(300).default(""),
   body: z.string().trim().min(20, "Isi artikel minimal 20 karakter.").max(50000),
+  content_id: z.uuid().nullable().optional().transform((value) => value ?? null),
+  cover_image_url: z.string().trim().url().nullable().optional().transform((value) => value || null),
 });
 
 export type ArticleInput = z.input<typeof articleSchema>;

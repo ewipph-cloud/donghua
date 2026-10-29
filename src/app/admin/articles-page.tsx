@@ -7,12 +7,15 @@ import {
   type ArticleInput,
   type ArticleRecord,
 } from "@/lib/admin/article-schema";
+import { contentRecordSchema, type ContentRecord } from "@/lib/admin/content-schema";
 
 const emptyArticle: ArticleInput = {
   title: "",
   slug: "",
   excerpt: "",
   body: "",
+  content_id: null,
+  cover_image_url: null,
 };
 
 function slugify(value: string) {
@@ -26,6 +29,7 @@ function slugify(value: string) {
 
 export function AdminArticles() {
   const [articles, setArticles] = useState<ArticleRecord[]>([]);
+  const [contents, setContents] = useState<ContentRecord[]>([]);
   const [article, setArticle] = useState<ArticleInput>(emptyArticle);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,16 +39,26 @@ export function AdminArticles() {
   const loadArticles = useCallback(async () => {
     setError("");
     try {
-      const response = await fetch("/api/admin/articles", { cache: "no-store" });
-      const payload: unknown = await response.json();
-      if (!response.ok) {
+      const [articlesResponse, contentsResponse] = await Promise.all([
+        fetch("/api/admin/articles", { cache: "no-store" }),
+        fetch("/api/admin/content", { cache: "no-store" }),
+      ]);
+      const [articlesPayload, contentsPayload]: [unknown, unknown] = await Promise.all([
+        articlesResponse.json(),
+        contentsResponse.json(),
+      ]);
+      if (!articlesResponse.ok) {
         const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
-            ? payload.error
+          articlesPayload && typeof articlesPayload === "object" && "error" in articlesPayload && typeof articlesPayload.error === "string"
+            ? articlesPayload.error
             : "Artikel tidak dapat dimuat.";
         throw new Error(message);
       }
-      setArticles(articleRecordSchema.array().parse(payload));
+      if (!contentsResponse.ok) {
+        throw new Error("Daftar film tidak dapat dimuat.");
+      }
+      setArticles(articleRecordSchema.array().parse(articlesPayload));
+      setContents(contentRecordSchema.array().parse(contentsPayload));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Artikel tidak dapat dimuat.");
     } finally {
@@ -56,6 +70,15 @@ export function AdminArticles() {
     const timer = window.setTimeout(() => void loadArticles(), 0);
     return () => window.clearTimeout(timer);
   }, [loadArticles]);
+
+  function selectContent(contentId: string) {
+    const selected = contents.find((item) => item.id === contentId);
+    setArticle((current) => ({
+      ...current,
+      content_id: selected?.id ?? null,
+      cover_image_url: selected?.poster_url ?? selected?.banner_url ?? null,
+    }));
+  }
 
   async function saveArticle(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -113,6 +136,26 @@ export function AdminArticles() {
         </div>
         <form className="admin-form" onSubmit={saveArticle}>
           <div className="form-grid">
+            <label className="form-full">
+              Film / Donghua terkait
+              <select
+                value={article.content_id ?? ""}
+                onChange={(event) => selectContent(event.target.value)}
+              >
+                <option value="">Pilih dari daftar konten</option>
+                {contents.map((item) => (
+                  <option key={item.id} value={item.id}>{item.title}</option>
+                ))}
+              </select>
+            </label>
+            {typeof article.cover_image_url === "string" && article.cover_image_url && (
+              <div className="form-full article-cover-preview">
+                {/* Poster dipakai otomatis dari konten yang dipilih. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={article.cover_image_url} alt="Poster artikel" />
+                <small>Poster otomatis dari film yang dipilih</small>
+              </div>
+            )}
             <label className="form-full">
               Judul artikel
               <input

@@ -170,9 +170,15 @@ create table if not exists public.articles (
   slug text not null unique,
   excerpt text not null default '',
   body text not null,
+  content_id uuid references public.anime_content (id) on delete set null,
+  cover_image_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.articles
+  add column if not exists content_id uuid references public.anime_content (id) on delete set null,
+  add column if not exists cover_image_url text;
 
 alter table public.anime_episodes
   add column if not exists stream_url_okru text,
