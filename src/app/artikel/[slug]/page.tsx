@@ -26,18 +26,32 @@ export default async function ArticlePage({ params }: Props) {
   if (!data) notFound();
   const article = data as Article;
 
+  const bodyParagraphs = article.body
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .filter((paragraph, index, paragraphs) => !(index === 0 && paragraph === article.title));
+
   return (
     <main className="public-article-page">
       <article className="public-article-shell">
         <Link className="public-articles-back" href="/artikel">← Semua artikel</Link>
-        <header>
-          <span className="public-article-kicker">ARTIKEL DONGHUA</span>
-          <h1>{article.title}</h1>
-          {article.excerpt && <p className="public-article-excerpt">{article.excerpt}</p>}
-          <time>{new Date(article.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</time>
-        </header>
-        {article.cover_image_url && <img className="public-article-cover" src={article.cover_image_url} alt={article.title} />}
-        <div className="public-article-body">{article.body.split(/\n{2,}/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
+        <div className="public-article-layout">
+          {article.cover_image_url && (
+            <aside className="public-article-media">
+              <img className="public-article-cover" src={article.cover_image_url} alt={article.title} />
+            </aside>
+          )}
+          <div className="public-article-content">
+            <header>
+              <span className="public-article-kicker">ARTIKEL DONGHUA</span>
+              <h1>{article.title}</h1>
+              {article.excerpt && <p className="public-article-excerpt">{article.excerpt}</p>}
+              <time>{new Date(article.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</time>
+            </header>
+            <div className="public-article-body">{bodyParagraphs.map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 20)}`}>{paragraph}</p>)}</div>
+          </div>
+        </div>
       </article>
     </main>
   );
