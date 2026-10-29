@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AdSenseUnit, InFeedAdUnit } from "@/app/adsense-unit";
+import { AdSenseUnit, InFeedAdUnit, MultiplexAdUnit } from "@/app/adsense-unit";
 import {
   categories,
   imageUrl,
@@ -530,6 +530,8 @@ export default function Home() {
           <div className="sidebar-note"><Clock3 size={14} /><span>Episode baru diperbarui sepanjang minggu.</span></div>
         </aside>
       </div>
+
+      <MultiplexAdUnit />
 
       <footer className="footer page-width">
         <a className="footer-brand" href="#beranda"><span className="brand-mark"><Sparkles size={16} /></span><strong>ANIME<span>ID</span></strong></a>

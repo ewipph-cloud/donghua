@@ -771,6 +771,21 @@ button {
   display: none;
 }
 
+.catalog-multiplex-ad {
+  display: grid;
+  gap: 5px;
+  margin: 28px auto;
+}
+
+.catalog-multiplex-ad .adsbygoogle {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.catalog-multiplex-ad:has(.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none;
+}
+
 .category-tabs {
   display: flex;
   min-width: 0;

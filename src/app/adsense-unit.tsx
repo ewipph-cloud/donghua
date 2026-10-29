@@ -67,3 +67,32 @@ export function InFeedAdUnit() {
     </aside>
   );
 }
+
+export function MultiplexAdUnit() {
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+
+    try {
+      window.adsbygoogle = window.adsbygoogle || [];
+      window.adsbygoogle.push({});
+      initialized.current = true;
+    } catch (error) {
+      console.error("Iklan Multiplex AdSense tidak dapat dimuat.", error);
+    }
+  }, []);
+
+  return (
+    <aside className="catalog-multiplex-ad page-width" aria-label="Iklan rekomendasi">
+      <span className="catalog-ad-label">IKLAN</span>
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block" }}
+        data-ad-format="autorelaxed"
+        data-ad-client="ca-pub-7311117660161505"
+        data-ad-slot="8659912501"
+      />
+    </aside>
+  );
+}

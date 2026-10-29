@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Donghua ID — Jelajahi Dunia Lain",
   description:
     "Temukan donghua favoritmu, ikuti episode terbaru, dan simpan cerita pilihan dalam satu tempat.",
+  other: {
+    "google-adsense-account": "ca-pub-7311117660161505",
+  },
   appleWebApp: {
     capable: true,
     title: "Donghua ID",
