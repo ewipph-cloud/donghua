@@ -538,7 +538,6 @@ export default function Home() {
         <a className="footer-brand" href="#beranda"><span className="brand-mark"><Sparkles size={16} /></span><strong>ANIME<span>ID</span></strong></a>
         <p>Anime Jepang dan donghua Tiongkok pilihan untuk menemani waktu luangmu.</p>
         <span className="footer-copyright">© 2026 Donghua ID</span>
-        <p className="footer-disclaimer">Situs ini tidak menyimpan atau menghosting berkas video.</p>
       </footer>
 
       {selectedSeries && (
