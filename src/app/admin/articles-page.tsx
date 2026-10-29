@@ -34,6 +34,7 @@ export function AdminArticles() {
   const [article, setArticle] = useState<ArticleInput>(emptyArticle);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [updatingId, setUpdatingId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -79,6 +80,28 @@ export function AdminArticles() {
       content_id: selected?.id ?? null,
       cover_image_url: selected?.poster_url ?? selected?.banner_url ?? null,
     }));
+  }
+
+  async function togglePublished(item: ArticleRecord) {
+    setUpdatingId(item.id);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/articles", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, published: !item.published }),
+      });
+      const payload: unknown = await response.json();
+      if (!response.ok) throw new Error(payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string" ? payload.error : "Status artikel gagal diperbarui.");
+      articleRecordSchema.parse(payload);
+      setNotice(item.published ? "Artikel dikembalikan menjadi draft." : "Artikel berhasil dipublikasikan.");
+      await loadArticles();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Status artikel gagal diperbarui.");
+    } finally {
+      setUpdatingId("");
+    }
   }
 
   async function saveArticle(event: FormEvent<HTMLFormElement>) {
@@ -233,18 +256,25 @@ export function AdminArticles() {
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
-            <thead><tr><th>JUDUL</th><th>SLUG</th><th>TANGGAL DIBUAT</th></tr></thead>
+            <thead><tr><th>JUDUL</th><th>SLUG</th><th>STATUS</th><th>TANGGAL DIBUAT</th><th>AKSI</th></tr></thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={3} className="table-loading"><LoaderCircle size={18} /> Memuat artikel...</td></tr>
+                <tr><td colSpan={5} className="table-loading"><LoaderCircle size={18} /> Memuat artikel...</td></tr>
               ) : articles.length ? articles.map((item) => (
                 <tr key={item.id}>
                   <td><div className="content-cell"><span className="episode-icon"><Newspaper size={15} /></span><span><strong>{item.title}</strong><small>{item.excerpt || "Draft artikel"}</small></span></div></td>
                   <td className="table-episode">/{item.slug}</td>
+                  <td><span className={item.published ? "status-published" : "status-draft"}><i />{item.published ? "Dipublikasi" : "Draft"}</span></td>
                   <td className="table-episode">{new Date(item.created_at).toLocaleDateString("id-ID")}</td>
+                  <td>
+                    <button className="article-publish-action" type="button" disabled={updatingId === item.id} onClick={() => void togglePublished(item)}>
+                      {updatingId === item.id ? <LoaderCircle size={14} className="spin" /> : null}
+                      {item.published ? "Jadikan draft" : "Publikasikan"}
+                    </button>
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={3} className="table-empty">Belum ada artikel. Buat artikel pertamamu di atas.</td></tr>
+                <tr><td colSpan={5} className="table-empty">Belum ada artikel. Buat artikel pertamamu di atas.</td></tr>
               )}
             </tbody>
           </table>

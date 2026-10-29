@@ -1,4 +1,5 @@
-import { articleSchema } from "@/lib/admin/article-schema";
+import { z } from "zod";
+import { articleRecordSchema, articleSchema } from "@/lib/admin/article-schema";
 import { getAdminSession } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { databaseErrorResponse } from "@/lib/supabase/http";
@@ -56,4 +57,33 @@ export async function POST(request: Request) {
   }
 
   return Response.json(data, { status: 201 });
+}
+
+export async function PATCH(request: Request) {
+  if (!isSupabaseConfigured()) {
+    return Response.json({ error: "Supabase belum dikonfigurasi." }, { status: 503 });
+  }
+
+  const session = await getAdminSession();
+  if (!session) return Response.json({ error: "Akses admin diperlukan." }, { status: 401 });
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Format data JSON tidak valid." }, { status: 400 });
+  }
+
+  const parsed = z.object({ id: z.uuid(), published: z.boolean() }).safeParse(body);
+  if (!parsed.success) return Response.json({ error: "Data publikasi tidak valid." }, { status: 422 });
+
+  const { data, error } = await session.supabase
+    .from("articles")
+    .update({ published: parsed.data.published })
+    .eq("id", parsed.data.id)
+    .select("*")
+    .single();
+
+  if (error) return databaseErrorResponse(error, "Status artikel tidak dapat diperbarui.");
+  return Response.json(articleRecordSchema.parse(data));
 }
