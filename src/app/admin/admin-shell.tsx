@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Newspaper,
   ShieldCheck,
   X,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const navigation = [
   { href: "/admin", label: "Ringkasan", icon: LayoutDashboard },
   { href: "/admin#konten", label: "Konten", icon: Clapperboard },
   { href: "/admin#episode", label: "Episode", icon: BookOpen },
+  { href: "/admin/articles", label: "Artikel", icon: Newspaper },
 ];
 
 export function AdminShell({
@@ -55,15 +57,20 @@ export function AdminShell({
         <div className="admin-nav-label">MENU UTAMA</div>
         <nav className="admin-navigation" aria-label="Navigasi admin">
           {navigation.map(({ href, label, icon: Icon }) => (
-            <a
+            <Link
               href={href}
               key={href}
-              className={pathname === "/admin" && href === "/admin" ? "admin-nav-active" : ""}
+              className={
+                (pathname === "/admin" && href === "/admin") ||
+                pathname === href
+                  ? "admin-nav-active"
+                  : ""
+              }
               onClick={() => setMenuOpen(false)}
             >
               <Icon size={17} /> <span>{label}</span>
               {href === "/admin" && <span className="admin-nav-indicator" />}
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="admin-sidebar-bottom">

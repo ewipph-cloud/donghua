@@ -164,6 +164,16 @@ create table if not exists public.anime_episodes (
   unique (content_id, episode_number)
 );
 
+create table if not exists public.articles (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  slug text not null unique,
+  excerpt text not null default '',
+  body text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.anime_episodes
   add column if not exists stream_url_okru text,
   add column if not exists stream_url_dailymotion text,
@@ -182,14 +192,21 @@ create trigger anime_episodes_set_updated_at
   before update on public.anime_episodes
   for each row execute function private.set_updated_at();
 
+drop trigger if exists articles_set_updated_at on public.articles;
+create trigger articles_set_updated_at
+  before update on public.articles
+  for each row execute function private.set_updated_at();
+
 alter table public.anime_content enable row level security;
 alter table public.anime_episodes enable row level security;
+alter table public.articles enable row level security;
 
-revoke all on public.admin_users, public.anime_content, public.anime_episodes from public;
-revoke all on public.admin_users, public.anime_content, public.anime_episodes from anon, authenticated;
+revoke all on public.admin_users, public.anime_content, public.anime_episodes, public.articles from public;
+revoke all on public.admin_users, public.anime_content, public.anime_episodes, public.articles from anon, authenticated;
 grant select on public.anime_content, public.anime_episodes to anon, authenticated;
 grant select on public.admin_users to authenticated;
-grant insert, update, delete on public.anime_content, public.anime_episodes to authenticated;
+grant select on public.articles to authenticated;
+grant insert, update, delete on public.anime_content, public.anime_episodes, public.articles to authenticated;
 grant usage on schema public to anon, authenticated;
 
 drop policy if exists "Published content is visible to everyone" on public.anime_content;
@@ -243,5 +260,30 @@ create policy "Admins can update episodes"
 drop policy if exists "Admins can delete episodes" on public.anime_episodes;
 create policy "Admins can delete episodes"
   on public.anime_episodes for delete
+  to authenticated
+  using ((select private.is_admin()));
+
+drop policy if exists "Admins can view articles" on public.articles;
+create policy "Admins can view articles"
+  on public.articles for select
+  to authenticated
+  using ((select private.is_admin()));
+
+drop policy if exists "Admins can insert articles" on public.articles;
+create policy "Admins can insert articles"
+  on public.articles for insert
+  to authenticated
+  with check ((select private.is_admin()));
+
+drop policy if exists "Admins can update articles" on public.articles;
+create policy "Admins can update articles"
+  on public.articles for update
+  to authenticated
+  using ((select private.is_admin()))
+  with check ((select private.is_admin()));
+
+drop policy if exists "Admins can delete articles" on public.articles;
+create policy "Admins can delete articles"
+  on public.articles for delete
   to authenticated
   using ((select private.is_admin()));
