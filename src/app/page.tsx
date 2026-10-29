@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AdSenseUnit } from "@/app/adsense-unit";
+import { AdSenseUnit, InFeedAdUnit } from "@/app/adsense-unit";
 import {
   categories,
   imageUrl,
@@ -415,7 +415,8 @@ export default function Home() {
           ) : filteredSeries.length > 0 && activeStatus !== "Disimpan" ? (
             <div className="series-grid">
               {filteredSeries.map((item, index) => (
-                <article className="series-card" key={item.id} style={{ animationDelay: `${index * 35}ms` }}>
+                <Fragment key={item.id}>
+                <article className="series-card" style={{ animationDelay: `${index * 35}ms` }}>
                   <button className="poster-button" type="button" onClick={() => setSelectedSeries(item)} aria-label={`Lihat detail ${item.title}`}>
                     <div className="poster-art" style={{ backgroundColor: item.color }}>
                       <Image src={imageUrl(item.image, 650)} alt="" fill sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 18vw" />
@@ -445,6 +446,8 @@ export default function Home() {
                     </div>
                   </div>
                 </article>
+                {index === 3 && <InFeedAdUnit />}
+                </Fragment>
               ))}
             </div>
           ) : activeStatus === "Disimpan" && catalogTitles.some((item) => savedIds.includes(item.id)) ? (

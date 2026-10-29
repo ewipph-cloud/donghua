@@ -755,6 +755,22 @@ button {
   display: none;
 }
 
+.catalog-infeed-ad {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 5px;
+}
+
+.catalog-infeed-ad .adsbygoogle {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.catalog-infeed-ad:has(.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none;
+}
+
 .category-tabs {
   display: flex;
   min-width: 0;
