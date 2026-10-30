@@ -13,6 +13,7 @@ import {
   Maximize,
   Pause,
   Play,
+  RotateCw,
   Share2,
 } from "lucide-react";
 import { imageUrl, type Series } from "@/lib/series";
@@ -247,6 +248,8 @@ export function WatchPlayer({
     share,
   } = useTelegram();
   const [telegramFullscreen, setTelegramFullscreen] = useState(false);
+  const [landscapeMode, setLandscapeMode] = useState(false);
+  const [orientationMessage, setOrientationMessage] = useState("");
   const countedSlug = useRef<string | null>(null);
   const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
   const latestAvailableEpisode = episodes.at(-1)?.episodeNumber ?? 1;
@@ -385,6 +388,11 @@ export function WatchPlayer({
                   onClick={() => {
                     const next = !telegramFullscreen;
                     if (fullscreen(next)) {
+                      if (!next) {
+                        screen.orientation?.unlock();
+                        setLandscapeMode(false);
+                        setOrientationMessage("");
+                      }
                       setTelegramFullscreen(next);
                       haptic("light");
                     }
@@ -394,7 +402,51 @@ export function WatchPlayer({
                   {telegramFullscreen ? "Keluar layar penuh" : "Layar penuh"}
                 </button>
               )}
+              {isTelegram && (
+                <button
+                  className="video-share-button"
+                  type="button"
+                  aria-pressed={landscapeMode}
+                  onClick={async () => {
+                    if (landscapeMode) {
+                      screen.orientation.unlock();
+                      fullscreen(false);
+                      setLandscapeMode(false);
+                      setTelegramFullscreen(false);
+                      setOrientationMessage("");
+                      haptic("light");
+                      return;
+                    }
+
+                    if (!fullscreen(true)) {
+                      setOrientationMessage("Mode layar penuh tidak tersedia di perangkat ini.");
+                      return;
+                    }
+                    setTelegramFullscreen(true);
+                    const orientation = screen.orientation as ScreenOrientation & {
+                      lock?: (orientation: "landscape") => Promise<void>;
+                    };
+                    if (typeof orientation.lock !== "function") {
+                      setOrientationMessage("Putar perangkat ke posisi landscape.");
+                      return;
+                    }
+                    try {
+                      await orientation.lock("landscape");
+                      setLandscapeMode(true);
+                      setOrientationMessage("");
+                      haptic("light");
+                    } catch (error) {
+                      console.warn("Orientasi landscape tidak didukung perangkat ini.", error);
+                      setOrientationMessage("Layar penuh aktif. Putar perangkat ke posisi landscape.");
+                    }
+                  }}
+                >
+                  <RotateCw size={15} />
+                  {landscapeMode ? "Keluar landscape" : "Landscape"}
+                </button>
+              )}
               <span className="video-share-message" role="status" aria-live="polite">{shareMessage}</span>
+              <span className="video-share-message" role="status" aria-live="polite">{orientationMessage}</span>
             </div>
             {availableServers.length > 0 && (
               <div className="video-server-list" role="group" aria-label="Pilih server video">
