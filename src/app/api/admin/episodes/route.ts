@@ -2,6 +2,7 @@ import { episodeSchema } from "@/lib/admin/content-schema";
 import { getAdminSession } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { databaseErrorResponse } from "@/lib/supabase/http";
+import { notifyEpisodeSubscribers } from "@/lib/telegram/bot";
 
 export async function GET() {
   if (!isSupabaseConfigured()) {
@@ -62,5 +63,19 @@ export async function POST(request: Request) {
     return databaseErrorResponse(error, "Episode tidak dapat disimpan.");
   }
 
-  return Response.json(data, { status: 201 });
+  let notification: { subscribers: number; sent: number; failed: number; skipped?: boolean } | undefined;
+  if (data.published) {
+    try {
+      notification = await notifyEpisodeSubscribers({
+        contentId: data.content_id,
+        episodeNumber: data.episode_number,
+        episodeTitle: data.title,
+      });
+    } catch (notifyError) {
+      console.error("Episode tersimpan, tetapi notifikasi Telegram gagal diproses.", notifyError);
+      notification = { subscribers: 0, sent: 0, failed: 0, skipped: true };
+    }
+  }
+
+  return Response.json({ ...data, ...(notification ? { notification } : {}) }, { status: 201 });
 }

@@ -55,3 +55,36 @@ Upload poster/banner menerima JPG, PNG, WebP, dan AVIF hingga 6 MB. Setelah memp
 Halaman `/watch/[slug]` menggunakan URL server episode terlebih dahulu, lalu URL server utama konten sebagai fallback. Admin dapat menyimpan URL untuk server lain, OK.Ru, dan Dailymotion; penonton memilih server yang tersedia di halaman tonton. Pemutar mendukung file MP4, WebM, OGG, stream HLS (`.m3u8`), URL embed provider yang mengizinkan iframe, serta URL video YouTube biasa. Manifest CDN Dailymotion (`.m3u8`) dan segmennya dimuat melalui proxy situs agar browser tidak terhalang CORS. URL CDN bertoken tetap dapat kedaluwarsa atau ditolak oleh provider. Semua URL harus HTTPS dan sumber video harus memiliki izin penggunaan.
 
 Setelah memperbarui project, jalankan ulang [`supabase/schema.sql`](./supabase/schema.sql) untuk menambahkan kolom URL server OK.Ru dan Dailymotion pada konten dan episode yang sudah ada.
+
+## Telegram Mini App
+
+Webapp dapat dibuka langsung dari Telegram menggunakan URL HTTPS deployment yang sama. SDK Telegram akan memanggil `ready()` dan memperluas tampilan saat aplikasi dibuka di dalam Telegram.
+
+1. Buat bot melalui [`@BotFather`](https://t.me/BotFather), lalu buka **Bot Settings → Configure Mini App** (atau `/newapp`) dan isi URL HTTPS deployment.
+2. Atur tombol menu bot melalui **Bot Settings → Menu Button → Configure menu button** agar pengguna dapat membuka Mini App dari percakapan.
+3. Isi `TELEGRAM_BOT_TOKEN` di environment server deployment dengan token bot dari BotFather. Jangan gunakan awalan `NEXT_PUBLIC_` dan jangan kirim token ke browser.
+4. Opsional: atur `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` dengan username bot tanpa `@` untuk membagikan tautan Mini App langsung.
+5. Provider di `src/components/TelegramProvider.tsx` menyediakan `useTelegram()` dan `useBackButton()`. Favorit serta riwayat tonton memakai Telegram CloudStorage, dengan `localStorage` sebagai fallback di browser biasa atau saat CloudStorage gagal.
+6. Endpoint `POST /api/telegram/auth` menerima `{ "initData": "<Telegram.WebApp.initData>" }`, memeriksa signature HMAC dan usia data (maksimal 24 jam), lalu mengembalikan identitas publik Telegram yang tervalidasi. Kirim `initData` mentah dari client; jangan memakai `initDataUnsafe` sebagai bukti autentikasi.
+
+Endpoint tersebut memvalidasi identitas Telegram untuk penggunaan di Mini App, tetapi belum membuat sesi Supabase atau menghubungkan akun Telegram ke akun Supabase.
+
+### Notifikasi episode baru
+
+Notifikasi hanya dikirim kepada pengguna yang membuka chat bot dan menekan **Start** (`/start`). Pengguna dapat menghentikannya dengan `/stop`.
+
+1. Deploy aplikasi dan pastikan `TELEGRAM_BOT_TOKEN` serta `SUPABASE_SECRET_KEY` telah diatur sebagai secret environment variables di hosting.
+2. Jalankan ulang `supabase/schema.sql` di Supabase SQL Editor. Tabel langganan notifikasi hanya dapat diakses role `service_role`.
+3. Buat nilai acak untuk `TELEGRAM_WEBHOOK_SECRET_TOKEN` (1–256 karakter, hanya huruf, angka, `_`, `-`) dan tambahkan sebagai secret environment variable. Atur `TELEGRAM_WEB_APP_URL` ke URL HTTPS situs.
+4. Deploy ulang, lalu daftarkan webhook Telegram ke `https://DOMAIN-ANDA/api/telegram/webhook` dengan secret token yang sama. Contoh dari terminal dengan variabel shell `TELEGRAM_BOT_TOKEN` dan `TELEGRAM_WEBHOOK_SECRET_TOKEN` yang sudah diisi:
+
+   ```sh
+   curl -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
+     -d "url=https://DOMAIN-ANDA/api/telegram/webhook" \
+     -d "secret_token=${TELEGRAM_WEBHOOK_SECRET_TOKEN}"
+   ```
+
+5. Di BotFather, atur commands `/start - Aktifkan notifikasi episode baru`, `/stop - Hentikan notifikasi episode baru`, dan `/help - Bantuan`.
+6. Pengguna membuka `https://t.me/anime_ID_bot?start=subscribe`, lalu menekan **Start**. Saat admin menerbitkan episode untuk judul yang sudah diterbitkan, bot mengirim tautan episode ke pelanggan aktif.
+
+Episode draft tidak mengirim notifikasi. Mengedit episode yang sudah terbit juga tidak mengirim ulang; notifikasi dikirim saat episode dibuat dalam status terbit atau saat statusnya berubah dari draft menjadi terbit. Pantau log hosting untuk kegagalan pengiriman.

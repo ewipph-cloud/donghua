@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import InstallPrompt from "./install-prompt";
+import { TelegramProvider } from "@/components/TelegramProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,6 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7311117660161505"
@@ -42,9 +48,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body>
-        {children}
-        <InstallPrompt />
-        <Analytics />
+        <TelegramProvider>
+          {children}
+          <InstallPrompt />
+          <Analytics />
+        </TelegramProvider>
       </body>
     </html>
   );

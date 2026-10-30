@@ -303,7 +303,27 @@ export function AdminDashboard() {
         content_title: contents.find((item) => item.id === formEpisode.content_id)?.title ?? "Konten",
       });
       setModal(null);
-      setNotice(modal.record ? "Perubahan episode berhasil disimpan." : "Episode baru berhasil dibuat.");
+      const notification =
+        payload && typeof payload === "object" && "notification" in payload &&
+        payload.notification && typeof payload.notification === "object"
+          ? payload.notification
+          : null;
+      const notificationResult =
+        notification && "sent" in notification && typeof notification.sent === "number" &&
+        "failed" in notification && typeof notification.failed === "number"
+          ? notification
+          : null;
+      setNotice(
+        notificationResult
+          ? `Episode berhasil diterbitkan. Notifikasi terkirim ke ${notificationResult.sent} pelanggan${
+              notificationResult.failed
+                ? `, ${notificationResult.failed} gagal`
+                : ""
+            }.`
+          : modal.record
+            ? "Perubahan episode berhasil disimpan."
+            : "Episode baru berhasil dibuat.",
+      );
       await loadData();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Episode gagal disimpan.");

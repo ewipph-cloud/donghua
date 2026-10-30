@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AdSenseUnit, InFeedAdUnit, MultiplexAdUnit } from "@/app/adsense-unit";
 import {
   categories,
@@ -29,10 +30,12 @@ import {
   Play,
   Search,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
   Star,
   X,
 } from "lucide-react";
+import { useBackButton, useTelegram } from "@/components/TelegramProvider";
 
 function formatLatestEpisode(episode: string, status: Series["status"]) {
   const number = episode.match(/\d+/)?.[0];
@@ -53,6 +56,18 @@ function formatUpdateDate(value: string | undefined) {
 }
 
 export default function Home() {
+  const router = useRouter();
+  const handledStartParam = useRef("");
+  const {
+    addToHome,
+    clearHistory,
+    favorites: savedIds,
+    haptic,
+    history: watchHistory,
+    isTelegram,
+    startParam,
+    toggleFavorite,
+  } = useTelegram();
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeMediaType, setActiveMediaType] = useState<"donghua" | "anime">("donghua");
   const [activeCategory, setActiveCategory] = useState("Semua");
@@ -61,7 +76,6 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [savedIds, setSavedIds] = useState<string[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [lightTheme, setLightTheme] = useState(false);
@@ -74,16 +88,9 @@ export default function Home() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const saved = window.localStorage.getItem("donghua-saved");
-        if (saved) {
-          const parsed: unknown = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
-            setSavedIds(parsed);
-          }
-        }
         setLightTheme(window.localStorage.getItem("donghua-theme") === "light");
       } catch (error) {
-        console.warn("Koleksi tersimpan tidak dapat dimuat dari penyimpanan lokal.", error);
+        console.warn("Preferensi tema tidak dapat dimuat.", error);
       } finally {
         setStorageReady(true);
       }
@@ -94,14 +101,13 @@ export default function Home() {
   useEffect(() => {
     if (!storageReady) return;
     try {
-      window.localStorage.setItem("donghua-saved", JSON.stringify(savedIds));
       window.localStorage.setItem("donghua-theme", lightTheme ? "light" : "dark");
       document.documentElement.dataset.theme = lightTheme ? "light" : "dark";
     } catch (error) {
       console.warn("Preferensi situs tidak dapat disimpan.", error);
       document.documentElement.dataset.theme = lightTheme ? "light" : "dark";
     }
-  }, [lightTheme, savedIds, storageReady]);
+  }, [lightTheme, storageReady]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -136,6 +142,29 @@ export default function Home() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!startParam || startParam === handledStartParam.current || catalogLoading) return;
+    handledStartParam.current = startParam;
+    const articleMatch = startParam.match(/^artikel_(.+)$/);
+    if (articleMatch) {
+      router.replace(`/artikel/${encodeURIComponent(articleMatch[1])}`);
+      return;
+    }
+    const episodeMatch = startParam.match(/^watch_(.+)_ep_(\d+)$/);
+    if (episodeMatch) {
+      router.replace(`/watch/${encodeURIComponent(episodeMatch[1])}?episode=${episodeMatch[2]}`);
+      return;
+    }
+    const slug = startParam.replace(/^watch_/, "");
+    router.replace(`/watch/${encodeURIComponent(slug)}`);
+  }, [catalogLoading, router, startParam]);
+
+  const closeSelectedSeries = useCallback(() => {
+    haptic("light");
+    setSelectedSeries(null);
+  }, [haptic]);
+  useBackButton(closeSelectedSeries, Boolean(selectedSeries));
 
   const mediaTitles = useMemo(
     () => catalogTitles.filter((item) => (item.contentType ?? "donghua") === activeMediaType),
@@ -187,9 +216,10 @@ export default function Home() {
   }
 
   function toggleSaved(id: string) {
-    setSavedIds((current) =>
-      current.includes(id) ? current.filter((savedId) => savedId !== id) : [...current, id],
-    );
+    haptic("light");
+    void toggleFavorite(id).catch((error) => {
+      console.error("Koleksi tidak dapat disimpan.", error);
+    });
   }
 
   function changeFeature(direction: number) {
@@ -267,15 +297,35 @@ export default function Home() {
             >
               <span aria-hidden="true">{lightTheme ? "☾" : "☼"}</span>
             </button>
+            {isTelegram && (
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Tambah Mini App ke layar utama"
+                title="Tambah ke layar utama"
+                onClick={() => addToHome()}
+              >
+                <Smartphone size={17} />
+              </button>
+            )}
             <button className="icon-button menu-toggle" type="button" aria-label="Buka menu" onClick={() => setMenuOpen((open) => !open)}>
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
           {notificationsOpen && (
             <div className="notification-popover">
-              <div className="popover-heading"><span>Notifikasi</span><span className="live-pill">TERBARU</span></div>
-              <p><span className="notice-icon"><Play size={12} fill="currentColor" /></span><span><strong>Episode baru menanti</strong><small>Renegade Immortal · Episode 164</small></span></p>
-              <p><span className="notice-icon notice-purple"><Sparkles size={13} /></span><span><strong>Temukan cerita baru</strong><small>Update pilihan minggu ini sudah hadir.</small></span></p>
+              <div className="popover-heading"><span>Notifikasi episode</span><span className="live-pill">TELEGRAM</span></div>
+              <p><span className="notice-icon"><Bell size={13} /></span><span><strong>Dapatkan kabar episode baru</strong><small>Aktifkan bot agar update masuk ke Telegram.</small></span></p>
+              <a
+                className="notification-subscribe-link"
+                href={`https://t.me/${(process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "anime_ID_bot").replace(/^@/, "")}?start=subscribe`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => haptic("light")}
+              >
+                Aktifkan notifikasi
+                <ArrowRight size={14} />
+              </a>
             </div>
           )}
         </div>
@@ -348,6 +398,36 @@ export default function Home() {
       {catalogError && <div className="catalog-connection-error page-width" role="status">{catalogError}</div>}
 
       <div className="page-width content-layout">
+        {watchHistory.length > 0 && (
+          <section className="recent-history" aria-labelledby="recent-history-title">
+            <div className="recent-history-heading">
+              <div><span>LANJUTKAN MENONTON</span><h2 id="recent-history-title">Riwayat tontonan</h2></div>
+              <button type="button" onClick={() => {
+                void clearHistory().catch((error) =>
+                  console.error("Riwayat tontonan tidak dapat dihapus.", error),
+                );
+              }}>Hapus riwayat</button>
+            </div>
+            <div className="recent-history-list">
+              {watchHistory.map((entry) => {
+                const item = catalogTitles.find((content) => content.id === entry.id);
+                if (!item) return null;
+                return (
+                  <Link
+                    className="recent-history-item"
+                    href={`/watch/${encodeURIComponent(entry.id)}?episode=${entry.episode}`}
+                    key={entry.id}
+                    onClick={() => haptic("light")}
+                  >
+                    <span><Play size={14} fill="currentColor" /></span>
+                    <span><strong>{item.title}</strong><small>Lanjutkan Episode {entry.episode}</small></span>
+                    <ArrowRight size={15} />
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
         <section className="catalog-section" id="rilisan">
           <div className="section-heading">
             <div>

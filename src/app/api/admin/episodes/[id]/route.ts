@@ -2,6 +2,7 @@ import { episodeSchema } from "@/lib/admin/content-schema";
 import { getAdminSession } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { databaseErrorResponse } from "@/lib/supabase/http";
+import { notifyEpisodeSubscribers } from "@/lib/telegram/bot";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -33,6 +34,17 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
   }
 
+  const { data: previous, error: previousError } = await session.supabase
+    .from("anime_episodes")
+    .select("published")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (previousError) {
+    return databaseErrorResponse(previousError, "Episode tidak dapat diperbarui.");
+  }
+  if (!previous) return Response.json({ error: "Episode tidak ditemukan." }, { status: 404 });
+
   const { data, error } = await session.supabase
     .from("anime_episodes")
     .update({ ...parsed.data, updated_at: new Date().toISOString() })
@@ -44,7 +56,22 @@ export async function PATCH(request: Request, context: RouteContext) {
     return databaseErrorResponse(error, "Episode tidak dapat diperbarui.");
   }
   if (!data) return Response.json({ error: "Episode tidak ditemukan." }, { status: 404 });
-  return Response.json(data);
+
+  let notification: { subscribers: number; sent: number; failed: number; skipped?: boolean } | undefined;
+  if (!previous.published && data.published) {
+    try {
+      notification = await notifyEpisodeSubscribers({
+        contentId: data.content_id,
+        episodeNumber: data.episode_number,
+        episodeTitle: data.title,
+      });
+    } catch (notifyError) {
+      console.error("Episode diperbarui, tetapi notifikasi Telegram gagal diproses.", notifyError);
+      notification = { subscribers: 0, sent: 0, failed: 0, skipped: true };
+    }
+  }
+
+  return Response.json({ ...data, ...(notification ? { notification } : {}) });
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {

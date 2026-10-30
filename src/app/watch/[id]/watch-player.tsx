@@ -2,18 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Check,
   ChevronRight,
   CirclePlay,
   Clapperboard,
+  Maximize,
   Pause,
   Play,
   Share2,
 } from "lucide-react";
 import { imageUrl, type Series } from "@/lib/series";
+import { useBackButton, useTelegram } from "@/components/TelegramProvider";
 import {
   getDailymotionEmbedUrl,
   isDailymotionCdnUrl,
@@ -234,6 +237,16 @@ export function WatchPlayer({
   trackViews: boolean;
   initialEpisode?: number;
 }>) {
+  const router = useRouter();
+  const {
+    fullscreen,
+    haptic,
+    isTelegram,
+    isReady,
+    saveProgress,
+    share,
+  } = useTelegram();
+  const [telegramFullscreen, setTelegramFullscreen] = useState(false);
   const countedSlug = useRef<string | null>(null);
   const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
   const latestAvailableEpisode = episodes.at(-1)?.episodeNumber ?? 1;
@@ -253,9 +266,35 @@ export function WatchPlayer({
   const shareUrl = `/watch/${encodeURIComponent(title.id)}?episode=${selectedEpisode}`;
   const shareMessage = shareResult?.url === shareUrl ? shareResult.message : "";
 
+  const handleBack = useCallback(() => router.back(), [router]);
+  useBackButton(handleBack);
+
+  useEffect(() => {
+    if (!isReady) return;
+    void saveProgress({
+      id: title.id,
+      title: title.title,
+      episode: selectedEpisode,
+    }).catch((error) => {
+      console.error("Riwayat tontonan tidak dapat disimpan.", error);
+    });
+  }, [isReady, saveProgress, selectedEpisode, title.id, title.title]);
+
   async function shareTitle() {
+    const shareTitleText = `${title.title} Episode ${selectedEpisode}`;
+    if (isTelegram) {
+      try {
+        await share(shareUrl, shareTitleText);
+        setShareResult({ url: shareUrl, message: "Tautan berhasil dibagikan." });
+      } catch (error) {
+        console.error("Gagal membagikan tautan Telegram.", error);
+        setShareResult({ url: shareUrl, message: "Tautan tidak dapat dibagikan." });
+      }
+      return;
+    }
+
     const url = new URL(shareUrl, window.location.origin).toString();
-    const shareData = { title: `${title.title} Episode ${selectedEpisode}`, url };
+    const shareData = { title: shareTitleText, url };
 
     if (navigator.share) {
       try {
@@ -338,6 +377,23 @@ export function WatchPlayer({
                 <Share2 size={15} />
                 Bagikan
               </button>
+              {isTelegram && (
+                <button
+                  className="video-share-button"
+                  type="button"
+                  aria-label="Beralih ke layar penuh Telegram"
+                  onClick={() => {
+                    const next = !telegramFullscreen;
+                    if (fullscreen(next)) {
+                      setTelegramFullscreen(next);
+                      haptic("light");
+                    }
+                  }}
+                >
+                  <Maximize size={15} />
+                  {telegramFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                </button>
+              )}
               <span className="video-share-message" role="status" aria-live="polite">{shareMessage}</span>
             </div>
             {availableServers.length > 0 && (
@@ -349,7 +405,10 @@ export function WatchPlayer({
                     type="button"
                     className={`video-server-option${selectedServer?.id === server.id ? " video-server-selected" : ""}`}
                     aria-pressed={selectedServer?.id === server.id}
-                    onClick={() => setSelectedServerId(server.id)}
+                    onClick={() => {
+                      haptic("light");
+                      setSelectedServerId(server.id);
+                    }}
                   >
                     {server.name}
                   </button>
@@ -380,7 +439,10 @@ export function WatchPlayer({
                     type="button"
                     key={episodeNumber}
                     className={`episode-option${selectedEpisode === episodeNumber ? " episode-selected" : ""}`}
-                    onClick={() => setSelectedEpisode(episodeNumber)}
+                    onClick={() => {
+                      haptic("light");
+                      setSelectedEpisode(episodeNumber);
+                    }}
                   >
                     <span className="episode-preview">
                       <Image src={imageUrl(title.image, 180)} alt="" fill sizes="72px" />

@@ -177,6 +177,15 @@ create table if not exists public.articles (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.telegram_notification_subscriptions (
+  telegram_user_id bigint primary key,
+  first_name text not null,
+  username text,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.articles
   add column if not exists published boolean not null default false,
   add column if not exists content_id uuid references public.anime_content (id) on delete set null,
@@ -205,12 +214,21 @@ create trigger articles_set_updated_at
   before update on public.articles
   for each row execute function private.set_updated_at();
 
+drop trigger if exists telegram_notification_subscriptions_set_updated_at
+  on public.telegram_notification_subscriptions;
+create trigger telegram_notification_subscriptions_set_updated_at
+  before update on public.telegram_notification_subscriptions
+  for each row execute function private.set_updated_at();
+
 alter table public.anime_content enable row level security;
 alter table public.anime_episodes enable row level security;
 alter table public.articles enable row level security;
+alter table public.telegram_notification_subscriptions enable row level security;
 
 revoke all on public.admin_users, public.anime_content, public.anime_episodes, public.articles from public;
 revoke all on public.admin_users, public.anime_content, public.anime_episodes, public.articles from anon, authenticated;
+revoke all on public.telegram_notification_subscriptions from public, anon, authenticated;
+grant all on public.telegram_notification_subscriptions to service_role;
 grant select on public.anime_content, public.anime_episodes to anon, authenticated;
 grant select on public.admin_users to authenticated;
 grant select on public.articles to anon, authenticated;
