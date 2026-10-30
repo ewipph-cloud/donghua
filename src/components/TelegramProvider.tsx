@@ -30,6 +30,9 @@ type TelegramWebApp = {
   expand: () => void;
   initData: string;
   initDataUnsafe?: { start_param?: string };
+  version?: string;
+  isFullscreen?: boolean;
+  isVersionAtLeast?: (version: string) => boolean;
   colorScheme: "light" | "dark";
   themeParams?: { bg_color?: string };
   CloudStorage?: {
@@ -46,6 +49,10 @@ type TelegramWebApp = {
   addToHomeScreen?: () => void;
   requestFullscreen?: () => void;
   exitFullscreen?: () => void;
+  lockOrientation?: () => void;
+  unlockOrientation?: () => void;
+  onEvent?: (eventType: string, callback: (eventData?: { error?: string }) => void) => void;
+  offEvent?: (eventType: string, callback: (eventData?: { error?: string }) => void) => void;
   openTelegramLink?: (url: string) => void;
 };
 
@@ -62,6 +69,8 @@ type TelegramContextValue = {
   authError: string;
   isTelegram: boolean;
   isReady: boolean;
+  isFullscreen: boolean;
+  fullscreenError: string;
   startParam: string;
   favorites: string[];
   history: WatchProgress[];
@@ -74,6 +83,7 @@ type TelegramContextValue = {
   haptic: (style?: string) => boolean;
   addToHome: () => boolean;
   fullscreen: (on: boolean) => boolean;
+  lockOrientation: (on: boolean) => boolean;
 };
 
 const TelegramContext = createContext<TelegramContextValue | null>(null);
@@ -185,9 +195,22 @@ export function TelegramProvider({ children }: Readonly<{ children: ReactNode }>
   const [favorites, setFavorites] = useState<string[]>([]);
   const [history, setHistory] = useState<WatchProgress[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState("");
   const favoritesRef = useRef(favorites);
   const historyRef = useRef(history);
   const startParam = telegram?.initDataUnsafe?.start_param ?? "";
+
+  const subscribeToFullscreen = useCallback((callback: () => void) => {
+    if (!telegram?.onEvent || !telegram.offEvent) return () => {};
+    telegram.onEvent("fullscreenChanged", callback);
+    telegram.onEvent("fullscreenFailed", callback);
+    return () => {
+      telegram.offEvent?.("fullscreenChanged", callback);
+      telegram.offEvent?.("fullscreenFailed", callback);
+    };
+  }, [telegram]);
+  const getFullscreenSnapshot = useCallback(() => Boolean(telegram?.isFullscreen), [telegram]);
+  const isFullscreen = useSyncExternalStore(subscribeToFullscreen, getFullscreenSnapshot, () => false);
 
   useEffect(() => {
     favoritesRef.current = favorites;
@@ -279,6 +302,22 @@ export function TelegramProvider({ children }: Readonly<{ children: ReactNode }>
     void initialize();
     return () => {
       active = false;
+    };
+  }, [telegram]);
+
+  useEffect(() => {
+    if (!telegram?.onEvent || !telegram.offEvent) return;
+
+    const handleFullscreenChanged = () => setFullscreenError("");
+    const handleFullscreenFailed = (event?: { error?: string }) => {
+      setFullscreenError(event?.error || "Telegram tidak dapat membuka layar penuh.");
+    };
+
+    telegram.onEvent("fullscreenChanged", handleFullscreenChanged);
+    telegram.onEvent("fullscreenFailed", handleFullscreenFailed);
+    return () => {
+      telegram.offEvent?.("fullscreenChanged", handleFullscreenChanged);
+      telegram.offEvent?.("fullscreenFailed", handleFullscreenFailed);
     };
   }, [telegram]);
 
@@ -375,11 +414,30 @@ export function TelegramProvider({ children }: Readonly<{ children: ReactNode }>
   const fullscreen = useCallback((on: boolean) => {
     const method = on ? telegram?.requestFullscreen : telegram?.exitFullscreen;
     if (!method || !telegram) return false;
+    if (telegram.isVersionAtLeast && !telegram.isVersionAtLeast("8.0")) {
+      setFullscreenError("Perbarui Telegram untuk menggunakan mode layar penuh.");
+      return false;
+    }
+    try {
+      method.call(telegram);
+      setFullscreenError("");
+      return true;
+    } catch (error) {
+      console.warn("Mode layar penuh Telegram tidak tersedia.", error);
+      setFullscreenError("Telegram tidak dapat membuka layar penuh.");
+      return false;
+    }
+  }, [telegram]);
+
+  const lockOrientation = useCallback((on: boolean) => {
+    const method = on ? telegram?.lockOrientation : telegram?.unlockOrientation;
+    if (!method || !telegram) return false;
+    if (telegram.isVersionAtLeast && !telegram.isVersionAtLeast("8.0")) return false;
     try {
       method.call(telegram);
       return true;
     } catch (error) {
-      console.warn("Mode layar penuh Telegram tidak tersedia.", error);
+      console.warn("Penguncian orientasi Telegram tidak tersedia.", error);
       return false;
     }
   }, [telegram]);
@@ -389,6 +447,8 @@ export function TelegramProvider({ children }: Readonly<{ children: ReactNode }>
     authError,
     isTelegram: Boolean(telegram),
     isReady,
+    isFullscreen,
+    fullscreenError,
     startParam,
     favorites,
     history,
@@ -401,9 +461,10 @@ export function TelegramProvider({ children }: Readonly<{ children: ReactNode }>
     haptic,
     addToHome,
     fullscreen,
+    lockOrientation,
   }), [
-    user, authError, telegram, isReady, startParam, favorites, history, isFavorite,
-    toggleFavorite, saveProgress, getProgress, clearHistory, share, haptic, addToHome, fullscreen,
+    user, authError, telegram, isReady, isFullscreen, fullscreenError, startParam, favorites, history, isFavorite,
+    toggleFavorite, saveProgress, getProgress, clearHistory, share, haptic, addToHome, fullscreen, lockOrientation,
   ]);
 
   return <TelegramContext.Provider value={value}>{children}</TelegramContext.Provider>;

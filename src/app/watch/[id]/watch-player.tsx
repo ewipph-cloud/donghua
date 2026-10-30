@@ -11,6 +11,7 @@ import {
   CirclePlay,
   Clapperboard,
   Maximize,
+  Minimize,
   Pause,
   Play,
   RotateCw,
@@ -241,15 +242,18 @@ export function WatchPlayer({
   const router = useRouter();
   const {
     fullscreen,
+    isFullscreen,
+    fullscreenError,
+    lockOrientation,
     haptic,
     isTelegram,
     isReady,
     saveProgress,
     share,
   } = useTelegram();
-  const [telegramFullscreen, setTelegramFullscreen] = useState(false);
   const [landscapeMode, setLandscapeMode] = useState(false);
   const [orientationMessage, setOrientationMessage] = useState("");
+  const orientationAttempted = useRef(false);
   const countedSlug = useRef<string | null>(null);
   const latestMetadataEpisode = Number(title.episode.match(/\d+/)?.[0] ?? 1);
   const latestAvailableEpisode = episodes.at(-1)?.episodeNumber ?? 1;
@@ -271,6 +275,25 @@ export function WatchPlayer({
 
   const handleBack = useCallback(() => router.back(), [router]);
   useBackButton(handleBack);
+
+  useEffect(() => {
+    if (!isFullscreen || !landscapeMode || orientationAttempted.current) return;
+    orientationAttempted.current = true;
+
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (orientation: "landscape") => Promise<void>;
+    };
+    const requestOrientation = typeof orientation.lock === "function"
+      ? orientation.lock("landscape")
+      : Promise.reject(new Error("Orientasi layar tidak didukung."));
+    void requestOrientation.then(() => {
+      lockOrientation(true);
+      setOrientationMessage("");
+    }).catch((error: unknown) => {
+      console.warn("Orientasi landscape otomatis tidak didukung perangkat ini.", error);
+      setOrientationMessage("Pemutar beralih ke tampilan landscape.");
+    });
+  }, [isFullscreen, landscapeMode, lockOrientation]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -347,7 +370,7 @@ export function WatchPlayer({
         <div className="watch-breadcrumb"><Link href="/">Beranda</Link><ChevronRight size={13} /><span>{title.title}</span><ChevronRight size={13} /><strong>EP {selectedEpisode.toString().padStart(2, "0")}</strong></div>
         <div className="watch-layout">
           <section className="watch-primary">
-            <div className="video-frame">
+            <div className={`video-frame${isFullscreen ? " video-frame--fullscreen" : ""}${isFullscreen && landscapeMode ? " video-frame--landscape" : ""}`}>
               {selectedServer ? (
                 <VideoPlayback
                   key={`${selectedEpisode}:${selectedServer.id}:${selectedServer.url}`}
@@ -374,6 +397,24 @@ export function WatchPlayer({
                   <strong>DONGHUA<span>ID</span></strong>
                 </div>
               )}
+              {isFullscreen && (
+                <button
+                  type="button"
+                  className="video-fullscreen-exit"
+                  aria-label="Keluar dari layar penuh"
+                  onClick={() => {
+                    if (landscapeMode) lockOrientation(false);
+                    screen.orientation?.unlock();
+                    setLandscapeMode(false);
+                    orientationAttempted.current = false;
+                    setOrientationMessage("");
+                    fullscreen(false);
+                    haptic("light");
+                  }}
+                >
+                  Keluar layar penuh
+                </button>
+              )}
             </div>
             <div className="video-share-row">
               <button className="video-share-button" type="button" onClick={() => void shareTitle()}>
@@ -384,22 +425,22 @@ export function WatchPlayer({
                 <button
                   className="video-share-button"
                   type="button"
-                  aria-label="Beralih ke layar penuh Telegram"
+                  aria-label={isFullscreen ? "Keluar dari layar penuh Telegram" : "Beralih ke layar penuh Telegram"}
                   onClick={() => {
-                    const next = !telegramFullscreen;
-                    if (fullscreen(next)) {
-                      if (!next) {
+                    if (fullscreen(!isFullscreen)) {
+                      if (isFullscreen && landscapeMode) lockOrientation(false);
+                      if (isFullscreen) {
                         screen.orientation?.unlock();
                         setLandscapeMode(false);
+                        orientationAttempted.current = false;
                         setOrientationMessage("");
                       }
-                      setTelegramFullscreen(next);
                       haptic("light");
                     }
                   }}
                 >
-                  <Maximize size={15} />
-                  {telegramFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                  {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+                  {isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
                 </button>
               )}
               {isTelegram && (
@@ -407,38 +448,25 @@ export function WatchPlayer({
                   className="video-share-button"
                   type="button"
                   aria-pressed={landscapeMode}
-                  onClick={async () => {
+                  onClick={() => {
                     if (landscapeMode) {
-                      screen.orientation.unlock();
-                      fullscreen(false);
+                      lockOrientation(false);
+                      screen.orientation?.unlock();
                       setLandscapeMode(false);
-                      setTelegramFullscreen(false);
+                      orientationAttempted.current = false;
                       setOrientationMessage("");
                       haptic("light");
                       return;
                     }
 
-                    if (!fullscreen(true)) {
-                      setOrientationMessage("Mode layar penuh tidak tersedia di perangkat ini.");
+                    if (!isFullscreen && !fullscreen(true)) {
+                      setOrientationMessage(fullscreenError || "Mode layar penuh Telegram tidak tersedia.");
                       return;
                     }
-                    setTelegramFullscreen(true);
-                    const orientation = screen.orientation as ScreenOrientation & {
-                      lock?: (orientation: "landscape") => Promise<void>;
-                    };
-                    if (typeof orientation.lock !== "function") {
-                      setOrientationMessage("Putar perangkat ke posisi landscape.");
-                      return;
-                    }
-                    try {
-                      await orientation.lock("landscape");
-                      setLandscapeMode(true);
-                      setOrientationMessage("");
-                      haptic("light");
-                    } catch (error) {
-                      console.warn("Orientasi landscape tidak didukung perangkat ini.", error);
-                      setOrientationMessage("Layar penuh aktif. Putar perangkat ke posisi landscape.");
-                    }
+                    setLandscapeMode(true);
+                    orientationAttempted.current = false;
+                    setOrientationMessage("Menyiapkan tampilan landscape...");
+                    haptic("light");
                   }}
                 >
                   <RotateCw size={15} />
@@ -446,7 +474,11 @@ export function WatchPlayer({
                 </button>
               )}
               <span className="video-share-message" role="status" aria-live="polite">{shareMessage}</span>
-              <span className="video-share-message" role="status" aria-live="polite">{orientationMessage}</span>
+              {(orientationMessage || fullscreenError) && (
+                <span className="video-share-message" role="status" aria-live="polite">
+                  {orientationMessage || fullscreenError}
+                </span>
+              )}
             </div>
             {availableServers.length > 0 && (
               <div className="video-server-list" role="group" aria-label="Pilih server video">

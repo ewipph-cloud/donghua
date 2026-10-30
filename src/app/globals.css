@@ -3566,6 +3566,50 @@ button {
   isolation: isolate;
 }
 
+.video-frame--fullscreen {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+
+.video-frame--landscape {
+  top: 50%;
+  left: 50%;
+  width: 100dvh;
+  height: 100dvw;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.video-fullscreen-exit {
+  position: absolute;
+  z-index: 3;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 7px;
+  background: rgba(15, 17, 20, 0.82);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+@media (orientation: landscape) {
+  .video-frame--landscape {
+    width: 100vw;
+    height: 100dvh;
+    transform: translate(-50%, -50%);
+  }
+}
+
 .video-frame > img {
   z-index: -2;
   object-fit: cover;
