@@ -12,6 +12,14 @@ type TelegramApiResponse = {
   description?: string;
 };
 
+type TelegramReplyMarkup = {
+  inline_keyboard: Array<Array<{
+    text: string;
+    url?: string;
+    web_app?: { url: string };
+  }>>;
+};
+
 function getBotToken() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN belum dikonfigurasi.");
@@ -30,7 +38,7 @@ function createTelegramAdminClient() {
 export async function sendTelegramMessage(
   chatId: string | number,
   text: string,
-  replyMarkup?: { inline_keyboard: Array<Array<Record<string, string>>> },
+  replyMarkup?: TelegramReplyMarkup,
 ) {
   const response = await fetch(`https://api.telegram.org/bot${getBotToken()}/sendMessage`, {
     method: "POST",

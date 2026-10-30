@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         message.chat.id,
         "✅ Notifikasi episode baru aktif. Kirim /stop kapan saja untuk berhenti.",
         webAppUrl
-          ? { inline_keyboard: [[{ text: "Buka Donghua ID", web_app: webAppUrl }]] }
+          ? { inline_keyboard: [[{ text: "Buka Donghua ID", web_app: { url: webAppUrl } }]] }
           : undefined,
       );
     } else if (command === "/stop" || command === "/unsubscribe") {
