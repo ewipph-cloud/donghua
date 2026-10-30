@@ -2,6 +2,7 @@
 
 import { Download, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useTelegram } from "@/components/TelegramProvider";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -27,6 +28,7 @@ function getInstalledSnapshot() {
 }
 
 export default function InstallPrompt() {
+  const { isTelegram } = useTelegram();
   const [visible, setVisible] = useState(true);
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(
     null,
@@ -40,6 +42,8 @@ export default function InstallPrompt() {
   );
 
   useEffect(() => {
+    if (isTelegram) return;
+
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
@@ -61,9 +65,9 @@ export default function InstallPrompt() {
         handleBeforeInstallPrompt,
       );
     };
-  }, []);
+  }, [isTelegram]);
 
-  if (isInstalled || !visible) {
+  if (isTelegram || isInstalled || !visible) {
     return null;
   }
 

@@ -196,14 +196,20 @@ export default function Home() {
     .slice(0, 5);
   const filteredSeries = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("id");
-    return mediaTitles.filter((item) => {
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        `${item.title} ${item.genre}`.toLocaleLowerCase("id").includes(normalizedQuery);
-      const matchesCategory = activeCategory === "Semua" || item.genre === activeCategory;
-      const matchesStatus = activeStatus === "Semua" || item.status === activeStatus;
-      return matchesQuery && matchesCategory && matchesStatus;
-    });
+    return mediaTitles
+      .filter((item) => {
+        const matchesQuery =
+          normalizedQuery.length === 0 ||
+          `${item.title} ${item.genre}`.toLocaleLowerCase("id").includes(normalizedQuery);
+        const matchesCategory = activeCategory === "Semua" || item.genre === activeCategory;
+        const matchesStatus = activeStatus === "Semua" || item.status === activeStatus;
+        return matchesQuery && matchesCategory && matchesStatus;
+      })
+      .sort((left, right) => {
+        const leftUpdated = Date.parse(left.episodeUpdatedAt ?? "") || 0;
+        const rightUpdated = Date.parse(right.episodeUpdatedAt ?? "") || 0;
+        return rightUpdated - leftUpdated;
+      });
   }, [activeCategory, activeStatus, mediaTitles, query]);
 
   const mediaTypeLabel = activeMediaType === "anime" ? "anime" : "donghua";
