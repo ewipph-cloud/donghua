@@ -1,6 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { handleTelegramSubscription, sendTelegramMessage } from "@/lib/telegram/bot";
+import {
+  handleTelegramGroupSubscription,
+  handleTelegramSubscription,
+  sendTelegramMessage,
+} from "@/lib/telegram/bot";
 
 const webhookUpdateSchema = z.object({
   message: z.object({
@@ -11,8 +15,9 @@ const webhookUpdateSchema = z.object({
       username: z.string().max(100).optional(),
     }),
     chat: z.object({
-      id: z.number().int().positive().safe(),
-      type: z.string(),
+      id: z.number().int().safe(),
+      type: z.enum(["private", "group", "supergroup"]),
+      title: z.string().max(200).optional(),
     }),
   }).optional(),
 });
@@ -44,12 +49,34 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ ok: true });
 
   const message = parsed.data.message;
-  if (!message?.text || message.chat.type !== "private" || message.chat.id !== message.from.id) {
+  if (!message?.text) return Response.json({ ok: true });
+
+  const command = message.text.trim().split(/\s+/, 1)[0].split("@", 1)[0].toLowerCase();
+  const isGroup = message.chat.type === "group" || message.chat.type === "supergroup";
+  if (!isGroup && (message.chat.type !== "private" || message.chat.id !== message.from.id)) {
     return Response.json({ ok: true });
   }
 
-  const command = message.text.trim().split(/\s+/, 1)[0].split("@", 1)[0].toLowerCase();
   try {
+    if (isGroup) {
+      if (command === "/subscribe") {
+        await handleTelegramGroupSubscription(message.chat.id, message.chat.title, true);
+        await sendTelegramMessage(
+          message.chat.id,
+          "✅ Grup ini berlangganan notifikasi episode baru. Kirim /unsubscribe untuk berhenti.",
+        );
+      } else if (command === "/unsubscribe") {
+        await handleTelegramGroupSubscription(message.chat.id, message.chat.title, false);
+        await sendTelegramMessage(message.chat.id, "Notifikasi episode untuk grup ini sudah dihentikan. Kirim /subscribe untuk berlangganan lagi.");
+      } else if (command === "/start" || command === "/help") {
+        await sendTelegramMessage(
+          message.chat.id,
+          "Gunakan /subscribe untuk mengaktifkan notifikasi episode baru di grup ini, atau /unsubscribe untuk berhenti.",
+        );
+      }
+      return Response.json({ ok: true });
+    }
+
     if (command === "/start" || command === "/subscribe") {
       await handleTelegramSubscription(
         message.from.id,

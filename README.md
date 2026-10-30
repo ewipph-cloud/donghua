@@ -71,10 +71,10 @@ Endpoint tersebut memvalidasi identitas Telegram untuk penggunaan di Mini App, t
 
 ### Notifikasi episode baru
 
-Notifikasi hanya dikirim kepada pengguna yang membuka chat bot dan menekan **Start** (`/start`). Pengguna dapat menghentikannya dengan `/stop`.
+Notifikasi dapat dikirim ke pengguna pribadi yang menekan **Start** (`/start`) dan grup yang menjalankan `/subscribe@anime_ID_bot`. Pengguna dapat berhenti dengan `/stop`; grup dapat berhenti dengan `/unsubscribe@anime_ID_bot`.
 
 1. Deploy aplikasi dan pastikan `TELEGRAM_BOT_TOKEN` serta `SUPABASE_SECRET_KEY` telah diatur sebagai secret environment variables di hosting.
-2. Jalankan ulang `supabase/schema.sql` di Supabase SQL Editor. Tabel langganan notifikasi hanya dapat diakses role `service_role`.
+2. Jalankan ulang `supabase/schema.sql` di Supabase SQL Editor, atau jalankan `supabase/migrations/20261030_telegram_group_notifications.sql` untuk menambahkan dukungan langganan grup. Tabel langganan hanya dapat diakses role `service_role`.
 3. Buat nilai acak untuk `TELEGRAM_WEBHOOK_SECRET_TOKEN` (1–256 karakter, hanya huruf, angka, `_`, `-`) dan tambahkan sebagai secret environment variable. Atur `TELEGRAM_WEB_APP_URL` ke URL HTTPS situs.
 4. Deploy ulang, lalu daftarkan webhook Telegram ke `https://DOMAIN-ANDA/api/telegram/webhook` dengan secret token yang sama. Contoh dari terminal dengan variabel shell `TELEGRAM_BOT_TOKEN` dan `TELEGRAM_WEBHOOK_SECRET_TOKEN` yang sudah diisi:
 
@@ -84,7 +84,8 @@ Notifikasi hanya dikirim kepada pengguna yang membuka chat bot dan menekan **Sta
      -d "secret_token=${TELEGRAM_WEBHOOK_SECRET_TOKEN}"
    ```
 
-5. Di BotFather, atur commands `/start - Aktifkan notifikasi episode baru`, `/stop - Hentikan notifikasi episode baru`, dan `/help - Bantuan`.
-6. Pengguna membuka `https://t.me/anime_ID_bot?start=subscribe`, lalu menekan **Start**. Saat admin menerbitkan episode untuk judul yang sudah diterbitkan, bot mengirim tautan episode ke pelanggan aktif.
+5. Di BotFather, atur commands `/start - Aktifkan notifikasi episode baru`, `/subscribe - Langganan notifikasi`, `/stop - Hentikan notifikasi`, `/unsubscribe - Hentikan notifikasi grup`, dan `/help - Bantuan`.
+6. Pengguna membuka `https://t.me/anime_ID_bot?start=subscribe`, lalu menekan **Start**. Untuk grup, tambahkan bot lalu kirim `/subscribe@anime_ID_bot` (perintah menyebut username bot agar diterima saat privacy mode aktif). Bot harus diizinkan mengirim pesan di grup. Kirim `/unsubscribe@anime_ID_bot` untuk berhenti.
+7. Saat admin menerbitkan episode untuk judul yang sudah diterbitkan, bot mengirim tautan episode ke pelanggan personal dan grup yang aktif.
 
 Episode draft tidak mengirim notifikasi. Mengedit episode yang sudah terbit juga tidak mengirim ulang; notifikasi dikirim saat episode dibuat dalam status terbit atau saat statusnya berubah dari draft menjadi terbit. Pantau log hosting untuk kegagalan pengiriman.
