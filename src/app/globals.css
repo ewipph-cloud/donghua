@@ -1432,31 +1432,30 @@ button {
   font-size: 10px;
 }
 
-.footer-meta {
-  display: flex;
-  align-items: center;
-  justify-self: end;
-  gap: 12px;
-}
-
-.footer-telegram {
+.telegram-float {
+  position: fixed;
+  z-index: 20;
+  right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 52px;
+  height: 52px;
   place-items: center;
   flex-shrink: 0;
   border-radius: 50%;
   background: #229ed9;
   color: #fff;
-  transition: background 160ms ease, transform 160ms ease;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.3);
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
-.footer-telegram:hover {
+.telegram-float:hover {
   background: #168ac1;
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
 }
 
-.footer-telegram:focus-visible {
+.telegram-float:focus-visible {
   outline: 2px solid #229ed9;
   outline-offset: 3px;
 }

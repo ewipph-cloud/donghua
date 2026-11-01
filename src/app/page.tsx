@@ -234,6 +234,7 @@ export default function Home() {
   }
 
   return (
+    <>
     <main className={`site-shell${lightTheme ? " theme-light" : ""}`}>
       <header className="topbar">
         <div className="topbar-inner">
@@ -624,19 +625,7 @@ export default function Home() {
       <footer className="footer page-width">
         <a className="footer-brand" href="#beranda"><span className="brand-mark"><Sparkles size={16} /></span><strong>ANIME<span>ID</span></strong></a>
         <p>Anime Jepang dan donghua Tiongkok pilihan untuk menemani waktu luangmu.</p>
-        <div className="footer-meta">
-          <a
-            className="footer-telegram"
-            href="https://t.me/animeid_donghua"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Kunjungi Telegram Anime ID"
-            title="Telegram Anime ID"
-          >
-            <Send size={16} aria-hidden="true" />
-          </a>
-          <span className="footer-copyright">© 2026 Donghua ID</span>
-        </div>
+        <span className="footer-copyright">© 2026 Donghua ID</span>
       </footer>
 
       {selectedSeries && (
@@ -667,5 +656,16 @@ export default function Home() {
         </div>
       )}
     </main>
+    <a
+      className="telegram-float"
+      href="https://t.me/animeid_donghua"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Kunjungi Telegram Anime ID"
+      title="Telegram Anime ID"
+    >
+      <Send size={22} aria-hidden="true" />
+    </a>
+    </>
   );
 }
