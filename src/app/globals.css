@@ -1432,6 +1432,35 @@ button {
   font-size: 10px;
 }
 
+.footer-meta {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 12px;
+}
+
+.footer-telegram {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #229ed9;
+  color: #fff;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.footer-telegram:hover {
+  background: #168ac1;
+  transform: translateY(-2px);
+}
+
+.footer-telegram:focus-visible {
+  outline: 2px solid #229ed9;
+  outline-offset: 3px;
+}
+
 .footer > p.footer-disclaimer {
   grid-column: 1 / -1;
   padding-top: 11px;
